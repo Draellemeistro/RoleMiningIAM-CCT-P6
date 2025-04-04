@@ -1,4 +1,5 @@
 const mysql = require('mysql2');
+require('dotenv').config({ path: '../.env' });
 
 const connection = mysql.createConnection({
   host: process.env.DB_URL || 'p6bachelor.mysql.database.azure.com',

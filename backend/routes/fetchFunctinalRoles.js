@@ -1,5 +1,5 @@
 const express = require('express');
-const db = require('../utils/db.js');
+const db = require('../models/db.js');
 const asyncHandler = require('express-async-handler');
 
 const router = express.Router();
