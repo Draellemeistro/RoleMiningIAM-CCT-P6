@@ -2,10 +2,10 @@ const mysql = require('mysql2');
 require('dotenv').config({ path: '../.env' });
 
 const connection = mysql.createConnection({
-  host: process.env.DB_URL || 'p6bachelor.mysql.database.azure.com',
-  user: 'p6bachelor' || 'user', //TODO: Change to correct user
-  password: process.env.DB_PASSWORD || 'password', //TODO: Change to correct password
-  database: 'p6bachelor' || 'database', //TODO: Change to correct database
+  host: process.env.DB_URL,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME,
   port: process.env.DB_PORT || 3306,
 });
 

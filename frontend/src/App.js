@@ -1,24 +1,79 @@
-import logo from './logo.svg';
 import './App.css';
+import Home from "./pages/Home/Home";
+import department from "./pages/department/Department";
+import functionalRoles from "./pages/functionalRoles/functionalRoles";
+import user from "./pages/user/User";
+import { Routes, Route } from "react-router-dom";
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+
+const darkTheme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: '#C0B9DD',
+      contrastText: '#000000', // Default text color
+    },
+    secondary: {
+      main: "#75c9c8",
+      contrastText: "#000000"
+    },
+    background: {
+      default: '#F7F7F8',
+      paper: '#F7F4EA',
+    },
+  },
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          color: '#000000', // Ensures button text is black
+        },
+      },
+    },
+    MuiListItemText: {
+      styleOverrides: {
+        primary: {
+          color: '#000000', // Ensures ListItemText in the drawer is black
+        },
+      },
+    },
+    MuiMenu: {
+      styleOverrides: {
+        paper: {
+          backgroundColor: '#75c9c8', // Background color for dropdown menu
+        },
+      },
+    },
+    MuiMenuItem: {
+      styleOverrides: {
+        root: {
+          color: '#000000', // Text color for each item in the dropdown menu
+        },
+      },
+    },
+    MuiSelect: {
+      styleOverrides: {
+        root: {
+          color: '#000000', // Default text color for Select
+        },
+      },
+    },
+  },
+});
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <ThemeProvider theme={darkTheme}>
+      <CssBaseline />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/department" element={<department />} />
+        <Route path="/functionalRoles" element={<functionalRoles />} />
+        <Route path="/user" element={<user />} />
+
+      </Routes>
+    </ThemeProvider>
   );
 }
 
