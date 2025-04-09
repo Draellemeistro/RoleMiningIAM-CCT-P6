@@ -45,13 +45,13 @@ const Navbar = () => {
                         <ListItemText primary="Home" />
                     </ListItem>
                     <ListItem button sx={{ cursor: 'pointer' }} onClick={() => handleNavigation('/department')}>
-                        <ListItemText primary="Ingredients" />
+                        <ListItemText primary="Department" />
                     </ListItem>
                     <ListItem button sx={{ cursor: 'pointer' }} onClick={() => handleNavigation('/functionalRoles')}>
-                        <ListItemText primary="Recipes" />
+                        <ListItemText primary="Functional Roles" />
                     </ListItem>
                     <ListItem button sx={{ cursor: 'pointer' }} onClick={() => handleNavigation('/user')}>
-                        <ListItemText primary="Recipes" />
+                        <ListItemText primary="User" />
                     </ListItem>
                 </List>
             </Box>

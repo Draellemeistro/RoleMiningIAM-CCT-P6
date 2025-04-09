@@ -1,11 +1,11 @@
-import './App.css';
-import Home from "./pages/Home/Home";
-import department from "./pages/department/Department";
-import functionalRoles from "./pages/functionalRoles/functionalRoles";
-import user from "./pages/user/User";
-import { Routes, Route } from "react-router-dom";
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+import Home from "./pages/Home/Home";
+import Department from "./pages/department/Department";
+import FunctionalRoles from "./pages/functionalRoles/FunctionalRoles";
+import User from "./pages/user/User";
 
 const darkTheme = createTheme({
   palette: {
@@ -66,13 +66,14 @@ function App() {
   return (
     <ThemeProvider theme={darkTheme}>
       <CssBaseline />
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/department" element={<department />} />
-        <Route path="/functionalRoles" element={<functionalRoles />} />
-        <Route path="/user" element={<user />} />
-
-      </Routes>
+      <Router>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/department" element={<Department />} />
+          <Route path="/functionalRoles" element={<FunctionalRoles />} />
+          <Route path="/user" element={<User />} />
+        </Routes>
+      </Router>
     </ThemeProvider>
   );
 }
