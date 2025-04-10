@@ -1,19 +1,19 @@
-const mysql = require('mysql2');
-require('dotenv').config({ path: '../.env' });
+import mysql from 'mysql2/promise';
+import fs from 'fs';
+import dotenv from 'dotenv';
 
-const connection = mysql.createConnection({
+dotenv.config();
+
+const connection = await mysql.createConnection({
   host: process.env.DB_URL,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
   port: process.env.DB_PORT || 3306,
+  ssl: {
+    ca: fs.readFileSync('./ssl/DigiCertGlobalRootCA.crt.pem')
+  }
 });
 
-connection.connect((err) => {
-  if (err) throw err;
-  console.log('Connected to the database');
-});
-
-module.exports = {
-  connection,
-};
+console.log('✅ Connected to DB with async/await (promise-based)');
+export default connection;
