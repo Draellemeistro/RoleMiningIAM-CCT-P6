@@ -1,6 +1,17 @@
-import RoleMiningService from '../services/RoleMiningService.js';
+import AnalysisService from '../services/AnalysisService.js';
 
-export const analyzeSpecificDepartments = async (req, res) => {
+const getDepartments = async (req, res) => {
+  try {
+    const departmentList = await AnalysisService.fetchDepartments();
+    res.status(200).json(departmentList);
+  } catch (error) {
+    console.error("Error fetching list of departments:", error.message);
+    res.status(500).json({ error: "Failed to fetch list of departments" });
+  }
+};
+
+
+const getDepartmentOverview = async (req, res) => {
   const { departmentList } = req.body;
 
   // check if departmentList is a list/array and not empty
@@ -9,13 +20,13 @@ export const analyzeSpecificDepartments = async (req, res) => {
   }
 
   const allStrings = departmentList.every(department => typeof department === 'string' && department.trim() !== '');
-  if(!allStrings) {
+  if (!allStrings) {
     return res.status(400).json({ error: "All elements in departmentList must be non-empty strings" });
   }
 
   // Logic time
   try {
-    const analysisResults = await RoleMiningService.mineSpecificDepartments(departmentList);
+    const analysisResults = await AnalysisService.getDepartmentOverview(departmentList);
     res.status(200).json(analysisResults);
   } catch (error) {
     console.error("Error analyzing roles:", error.message);
@@ -23,10 +34,10 @@ export const analyzeSpecificDepartments = async (req, res) => {
   }
 }
 
-export const analyzeAllDepartments = async (req, res) => {
+const getAllDepartmentOverviews = async (req, res) => {
   // Logic time
   try {
-    const analysisResults = await RoleMiningService.mineAllDepartments();
+    const analysisResults = await AnalysisService.getAllDepartmentOverviews();
     res.status(200).json(analysisResults);
   } catch (error) {
     console.error("Error analyzing roles:", error.message);
@@ -35,5 +46,7 @@ export const analyzeAllDepartments = async (req, res) => {
 }
 
 export default {
+  getAllDepartmentOverviews,
+  getDepartmentOverview,
+  getDepartments,
 };
-

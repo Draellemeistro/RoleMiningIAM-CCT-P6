@@ -1,7 +1,12 @@
-import db from '../models/dv.js';
+import db from '../models/db.js';
+
+const fetchDepartments = async () => {
+  const [rows] = await db.query('SELECT DepartmentId, DepartmentName FROM Departments');
+  return rows;
+};
 
 // Hent alle applikationsroller, der ikke er tildelt til nogen funktionsrolle i en given afdeling
-export const getUnassignedAppRolesByDepartment = async (departmentNames) => {
+const getUnassignedAppRolesByDepartment = async (departmentNames) => {
   const placeholders = departmentNames.map(() => '?').join(', ');
   const query = `
     SELECT d.DepartmentName, u.UserId, u.FullName, ar.AppRoleName AS ExtraAppRole
@@ -25,7 +30,7 @@ export const getUnassignedAppRolesByDepartment = async (departmentNames) => {
 };
 
 // Hent funktionelle roller for brugere i specifikke afdelinger
-export const getFunctionalRolesByDepartment = async (departmentNames) => {
+const getFunctionalRolesByDepartment = async (departmentNames) => {
   const placeholders = departmentNames.map(() => '?').join(', ');
   const query = `
     SELECT d.DepartmentName, fr.RoleName AS FunctionalRole, u.UserId, u.FullName
@@ -91,4 +96,5 @@ export default {
   getFunctionalRolesByDepartment,
   getDepartmentOverview,
   getAllDepartmentOverviews,
+  fetchDepartments,
 };
