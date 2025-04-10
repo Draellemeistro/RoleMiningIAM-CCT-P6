@@ -46,7 +46,7 @@ const getFunctionalRolesByDepartment = async (departmentNames) => {
 };
 
 // Oversigt over en afdelings brugere og deres roller (funktionsroller og ekstra applikationsroller)
-const getDepartmentOverview = async (department, funcRoles, rogueAppRoles) => {
+const analyzeDepartment = async (department, funcRoles, rogueAppRoles) => {
   // Filter functional roles and rogue app roles for the specific department
   const departmentFuncRoles = funcRoles.filter(role => role.DepartmentName === department);
   const departmentRogueAppRoles = rogueAppRoles.filter(role => role.DepartmentName === department);
@@ -71,24 +71,67 @@ const getDepartmentOverview = async (department, funcRoles, rogueAppRoles) => {
         ...departmentRogueAppRoles.map(role => role.UserId),
       ]),
     ],
-    userFuncRoleDictMapThing: userFuncRoles,
-    userExtraAppRoleDictMapThing: userRogueAppRoles,
+    userFuncRoles: userFuncRoles,
+    userRogueAppRoles: userRogueAppRoles,
   };
 };
 
-// Skab alle afdelingsoversigter... måske ikke brugbar, men...
-const getAllDepartmentOverviews = async (departmentNames) => {
-  // Example: const departmentOverviews = await getAllDepartmentOverviews(['HR', 'Engineering']);
+const getDepartmentOverview = async (departmentNames, departmentIds) => {
+  // Example: const departmentOverviews = await getDepartmentOverview(['HR', 'Engineering']);
 
   const funcRoles = await getFunctionalRolesByDepartment(departmentNames);
   const rogueAppRoles = await getUnassignedAppRolesByDepartment(departmentNames);
 
   // Get overview for each department
   const departmentData = await Promise.all(departmentNames.map(department =>
-    getDepartmentOverview(department, funcRoles, rogueAppRoles)
+    analyzeDepartment(department, funcRoles, rogueAppRoles)
   ));
 
-  return departmentData;
+  // Create a mapping of department names to their IDs, so { 1: 'HR', 41: 'Engineering' }
+  const userNames = await db.query('SELECT UserId, FullName FROM Users WHERE DepartmentId IN (?)', [departmentIds]).then(([rows]) => {
+    return rows.reduce((acc, { UserId, FullName }) => {
+      acc[UserId] = FullName;
+      return acc;
+    }, {});
+  });
+
+  // Map user IDs to their full names in the department data. Delete this if UserId is preferred.
+  const updatedDepartmentData = departmentData.map(department => {
+    const updatedUsers = department.users.map(userId => userNames[userId] || userId)
+    const updatedUserFuncRoles = Object.keys(department.userFuncRoles).reduce((acc, userId) => {
+      const userFullName = userNames[userId] || userId;
+      acc[userFullName] = department.userFuncRoles[userId];
+      return acc;
+    }, {});
+
+    const updateduserRogueAppRoles = Object.keys(department.userRogueAppRoles).reduce((acc, userId) => {
+      const userFullName = userNames[userId] || userId;
+      acc[userFullName] = department.userRogueAppRoles[userId];
+      return acc;
+    }, {});
+
+    return {
+      ...department,
+      users: updatedUsers,
+      userFuncRoles: updatedUserFuncRoles,
+      userRogueAppRoles: updateduserRogueAppRoles
+    };
+  });
+
+  return updatedDepartmentData;
+}
+
+// Skab alle afdelingsoversigter... måske ikke brugbar, men...
+const getAllDepartmentOverviews = async () => {
+  const departments = await fetchDepartments();
+
+  // Pull department names from the fetched departments ([{DepartmentId, DepartmentName}, ...])
+  const departmentNames = departments.map(department => department.DepartmentName);
+  const departmentIds = departments.map(department => department.DepartmentId);
+
+  const departmentDataList = await getDepartmentOverview(departmentNames, departmentIds);
+
+  return departmentDataList;
 };
 
 export default {
