@@ -7,7 +7,7 @@ import ListItemText from '@mui/material/ListItemText';
 import { useNavigate } from 'react-router-dom';
 
 
-const drawerHeight = 54; // Adjust the height as needed
+export const drawerHeight = 54; // Adjust the height as needed
 const Navbar = () => {
     const navigate = useNavigate(); // useNavigate hook for navigation
 
