@@ -16,7 +16,7 @@ const FunctionalRoles = () => {
     useEffect(() => {
         const fetchRoles = async () => {
             try {
-                const res = await axios.get("http://localhost:3000/api/roles"); // adjust URL as needed
+                const res = await axios.get("http://localhost:3000/api/roles"); 
                 setFunctionalRoles(res.data);
             } catch (err) {
                 console.error("Error fetching functional roles:", err);
