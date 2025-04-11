@@ -4,67 +4,84 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Home from "./pages/Home/Home";
 import Department from "./pages/department/Department";
-import FunctionalRoles from "./pages/functionalRoles/FunctionalRoles";
+import FunctionalRoles from "./pages/functionalRoles/functionalRoles";
 import User from "./pages/user/User";
 
-const darkTheme = createTheme({
+const lightTheme = createTheme({
   palette: {
     mode: 'light',
     primary: {
-      main: '#C0B9DD',
-      contrastText: '#000000', // Default text color
+      main: '#BFDBFE', // Light Blue (blue-200)
+      contrastText: '#1E293B', // Dark Slate Text
     },
     secondary: {
-      main: "#75c9c8",
-      contrastText: "#000000"
+      main: '#93C5FD', // Soft blue for secondary accents (blue-300)
+      contrastText: '#1E293B',
     },
     background: {
-      default: '#F7F7F8',
-      paper: '#F7F4EA',
+      default: '#F8FAFC', // Very light gray-blue (slate-50)
+      paper: '#FFFFFF', // White card/panel background
+    },
+    text: {
+      primary: '#1E293B', // Slate dark
+      secondary: '#64748B', // Muted slate
     },
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
-          color: '#000000', // Ensures button text is black
+          backgroundColor: '#BFDBFE', // Light blue
+          color: '#1E293B', // Slate text
+          '&:hover': {
+            backgroundColor: '#93C5FD', // Slightly darker light blue
+          },
+          '&.Mui-disabled': {
+            backgroundColor: '#E5E7EB', // Disabled light gray
+            color: '#9CA3AF',
+          },
         },
       },
     },
-    MuiListItemText: {
+    MuiAppBar: {
       styleOverrides: {
-        primary: {
-          color: '#000000', // Ensures ListItemText in the drawer is black
+        root: {
+          backgroundColor: '#93C5FD', // Soft blue app bar
+          color: '#1E293B', // Dark slate text
         },
       },
     },
     MuiMenu: {
       styleOverrides: {
         paper: {
-          backgroundColor: '#75c9c8', // Background color for dropdown menu
+          backgroundColor: '#E0F2FE', // Very light blue for dropdown
         },
       },
     },
     MuiMenuItem: {
       styleOverrides: {
         root: {
-          color: '#000000', // Text color for each item in the dropdown menu
+          color: '#1E293B', // Slate text
+          '&:hover': {
+            backgroundColor: '#BAE6FD', // Gentle light blue hover
+          },
         },
       },
     },
     MuiSelect: {
       styleOverrides: {
         root: {
-          color: '#000000', // Default text color for Select
+          color: '#1E293B', // Slate text
         },
       },
     },
   },
 });
 
+
 function App() {
   return (
-    <ThemeProvider theme={darkTheme}>
+    <ThemeProvider theme={lightTheme}>
       <CssBaseline />
       <Router>
         <Routes>
