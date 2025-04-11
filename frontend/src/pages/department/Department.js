@@ -4,7 +4,8 @@ import config from "../../config";
 import { Box, Autocomplete, TextField, Button } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import DepartmentDataTable from "./Tables";
+// import DepartmentDataTable from "./Tables";
+import DepartmentDataGrid from "./Tables";
 import { Modal, Typography } from "@mui/material";
 
 const Department = () => {
@@ -58,14 +59,21 @@ const Department = () => {
         }}
       >
         {/* Autocomplete for selecting departments */}
+
         <Autocomplete
           multiple
           id="departments-autocomplete"
           options={departments}
           getOptionLabel={(option) => option.DepartmentName}
           value={selectedDepartments}
-          onChange={(event, newValue) => setSelectedDepartments(newValue)}
-          renderInput={(params) => <TextField {...params} label="Select Departments" />}
+          onChange={(event, newValue) => {
+            if (newValue.length <= 2) {
+              setSelectedDepartments(newValue);
+            }
+          }}
+          renderInput={(params) => (
+            <TextField {...params} label="Select up to 2 Departments" />
+          )}
           sx={{ width: 300 }}
         />
 
@@ -86,15 +94,16 @@ const Department = () => {
             }, 0);
           }}
         >
-          Analyze All Departments
+          Show Overview of All Departments
         </Button>
       </Box>
 
       {/* Result section */}
       {analysisResult && (
         <Box sx={{ marginTop: 4, }}>
-          <DepartmentDataTable departmentDataArr={analysisResult} />
-
+          {/*<DepartmentDataTable departmentDataArr={analysisResult} />
+*/}
+          <DepartmentDataGrid departmentDataArr={analysisResult} />
           {/* Modal for raw JSON */}
           <Box sx={{ textAlign: "center", mt: 2 }}>
             <Button variant="outlined" onClick={handleOpenModal}>
