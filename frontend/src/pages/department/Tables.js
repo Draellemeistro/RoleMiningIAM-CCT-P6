@@ -9,25 +9,154 @@ const columns = [
   { field: 'userAppRole', headerName: 'Extra App Roles', width: 250 },
 ];
 
-export default function DepartmentDataGrid({ departmentDataArr }) {
+export default function MutliDepartmentDataGrid({ departmentDataArr }) {
+  const tables = [];
+
+  departmentDataArr.forEach((departmentData) => {
+    const funcAppRoleMap = new Map(); // Map to store the functional and app roles
+    const rogueAppRoleMap = new Map(); // Map to store the rogue app roles
+    const { departmentId, departmentName, departmentUsers } = departmentData;
+
+    const gridCols = [
+      { field: 'info', headerName: 'Info', width: 150 },
+    ];
+
+    const gridRows = [];
+
+    const funcRoleRows = []; // Array to hold functional role rows
+    const appRoleRows = []; // Array to hold app role rows
+
+    // Add the required `id` and consistent string keys
+    const funcRoleRow = { id: 'row-func-role', info: 'Functional Roles' };
+    const appRoleRow = { id: 'row-app-role', info: 'App Role' };
+
+    let fieldCounter = 1;
+    const fieldKeys = [];
+
+    departmentUsers.forEach((user) => {
+      const fieldKey = `col-${fieldCounter}`; // field names must be strings
+      fieldKeys.push(fieldKey); // Store the field key for later use
+
+      gridCols.push({
+        field: fieldKey,
+        headerName: user.fullName || 'N/A',
+        width: 100,
+      });
+
+      let funcCount = 1;
+      const funcRoleNames = [];
+      user.funcRoles.forEach((funcRole) => {
+        funcRoleNames.push(funcRole.name);
+
+        if (funcRoleRows.length < funcCount) {
+          funcRoleRows.push({ id: `row-func-role-${funcCount}`, info: `Functional Role ${funcCount}` });
+        };
+
+        funcRoleRows[funcCount - 1][fieldKey] = funcRole.name || 'N/A';
+
+        if (!funcAppRoleMap.has(funcRole.name)) {
+          funcAppRoleMap.set(funcRole.name, funcRole.appRoles);
+        }
+
+        for (const appRole of funcRole.appRoles) {
+          if (!appRoleRows.some(row => row.id === appRole.name)) {
+            appRoleRows.push({ id: appRole.name, info: appRole.name });
+          }
+
+          const appRow = appRoleRows.find(row => row.id === appRole.name);
+          if (appRow) {
+            appRow[fieldKey] = appRole.PrivLevel || 'N/A';
+          }
+        }
+        funcCount++;
+      });
+
+      rogueAppRoleMap.set(user.fullName, user.rogueAppRoles);
+      user.rogueAppRoles.forEach((rogueAppRole) => {
+        if (!appRoleRows.some(row => row.id === rogueAppRole.name)) {
+          appRoleRows.push({ id: rogueAppRole.name, info: rogueAppRole.name });
+        }
+        const rogueRow = appRoleRows.find(row => row.id === rogueAppRole.name);
+        if (rogueRow) {
+          rogueRow[fieldKey] = rogueAppRole.PrivLevel || 'N/A';
+        }
+      });
+
+      fieldCounter++;
+    });
+
+    // filter(Boolean) til at fjerne null eller tomme felter (just in case)
+    fieldKeys.forEach((fieldKey) => {
+      funcRoleRows.forEach((row) => {
+        if (!row[fieldKey]) {
+          row[fieldKey] = ' ';
+        }
+      });
+      appRoleRows.forEach((row) => {
+        if (!row[fieldKey]) {
+          row[fieldKey] = ' ';
+        }
+      });
+    });
+
+    // Push the rows after ensuring each one has an id
+    gridRows.push(...funcRoleRows, ...appRoleRows);
+    tables.push({
+      rows: gridRows,
+      columns: gridCols,
+      title: departmentName
+    });
+  });
+
+  return (
+    <>
+      {tables.map((table, idx) => (
+        <Box key={idx} sx={{ mb: 5 }}>
+          <div style={{ marginBottom: '8px', fontWeight: 'bold', textAlign: 'center', fontSize: '20px' }}>
+            {table.title || `Department ${idx + 1}`}
+          </div>
+          <Box sx={{ height: 900, width: '100%' }}>
+            <DataGrid
+              rows={table.rows}
+              columns={table.columns}
+              pageSizeOptions={[5, 10, 20, { value: -1, label: 'All' }]}
+              initialState={{
+                pagination: {
+                  paginationModel: { pageSize: -1 },
+                },
+              }}
+              checkboxSelection
+              disableRowSelectionOnClick
+            />
+          </Box>
+        </Box>
+      ))}
+    </>
+  )
+};
+
+// TODO: color code accessses based on their permissions
+// TODO: split table into multiple tables based on the department
+// TODO: Make user clickable to open a modal with more information about the user (or send to another page)
+export function DepartmentDataGrid({ departmentDataArr }) {
   const gridCols = [
     { field: 'info', headerName: 'Info', width: 150 },
   ];
 
   const gridRows = [];
 
-  let bsCounter = 1;
+  let fieldCounter = 1;
 
   // Add the required `id` and consistent string keys
-  const depRow = { id: 'row-department', info: 'Department' };
-  const funcRoleRow = { id: 'row-functional-role', info: 'Functional Role' };
+  const depRow = { id: 'row-dep', info: 'Department' };
+  const funcRoleRow = { id: 'row-func-role', info: 'Functional Role' };
   const appRoleRow = { id: 'row-app-role', info: 'App Role' };
 
   departmentDataArr.forEach((departmentData) => {
     const { departmentName, users, userFuncRoles, userRogueAppRoles } = departmentData;
 
     users.forEach((fullName) => {
-      const fieldKey = `col-${bsCounter}`; // field names must be strings
+      const fieldKey = `col-${fieldCounter}`; // field names must be strings
 
       gridCols.push({
         field: fieldKey,
@@ -35,11 +164,20 @@ export default function DepartmentDataGrid({ departmentDataArr }) {
         width: 150,
       });
 
-      depRow[fieldKey] = departmentName || 'N/A';
-      funcRoleRow[fieldKey] = userFuncRoles[fullName] || 'N/A';
-      appRoleRow[fieldKey] = userRogueAppRoles[fullName] || 'N/A';
+      // To handle the eventuality that there are multiple roles for a user.
+      const funcRoles = Array.isArray(userFuncRoles[fullName])
+        ? userFuncRoles[fullName]
+        : [userFuncRoles[fullName]];
+      const appRoles = Array.isArray(userFuncRoles[fullName])
+        ? userRogueAppRoles[fullName]
+        : [userRogueAppRoles[fullName]];
 
-      bsCounter++;
+      depRow[fieldKey] = departmentName || 'N/A';
+      // filter(Boolean) til at fjerne null eller tomme felter (just in case)
+      funcRoleRow[fieldKey] = funcRoles.filter(Boolean).join(', ') || 'N/A';
+      appRoleRow[fieldKey] = appRoles.filter(Boolean).join(', ') || 'N/A';
+
+      fieldCounter++;
     });
   });
 
