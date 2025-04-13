@@ -5,7 +5,8 @@ import { Box, Autocomplete, TextField, Button } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 // import DepartmentDataTable from "./Tables";
-import DepartmentDataGrid from "./Tables";
+// import DepartmentDataGrid from "./Tables";
+import MutliDepartmentDataGrid from "./Tables";
 import { Modal, Typography } from "@mui/material";
 
 const Department = () => {
@@ -20,7 +21,7 @@ const Department = () => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const res = await axios.get(`${config.apiBaseUrl}/analysis`);
+        const res = await axios.get(`${config.apiBaseUrl}/departments`);
         setDepartments(res.data);
       } catch (err) {
         console.error("Error fetching details for departments:", err);
@@ -34,7 +35,7 @@ const Department = () => {
 
     try {
       const res = await axios.post(
-        `${config.apiBaseUrl}/analysis/analyze-specifics`,
+        `${config.apiBaseUrl}/departments/analyze-specifics`,
         { departmentList: selectedDepartments }
       );
 
@@ -103,7 +104,7 @@ const Department = () => {
         <Box sx={{ marginTop: 4, }}>
           {/*<DepartmentDataTable departmentDataArr={analysisResult} />
 */}
-          <DepartmentDataGrid departmentDataArr={analysisResult} />
+          <MutliDepartmentDataGrid departmentDataArr={analysisResult} />
           {/* Modal for raw JSON */}
           <Box sx={{ textAlign: "center", mt: 2 }}>
             <Button variant="outlined" onClick={handleOpenModal}>

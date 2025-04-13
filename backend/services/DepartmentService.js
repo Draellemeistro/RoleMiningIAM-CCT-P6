@@ -66,26 +66,29 @@ const fetchDepartments = async () => {
 
 const getInfoAboutFuncAppRoles = async (departmentNames) => {
   const placeholders = departmentNames.map(() => '?').join(', ');
+
   const query = `
-    SELECT d.DepartmentId, u.UserId, u.FullName, fr.RoleName AS FunctionalRole, ar.AppRoleName, ar.PrivilegeLevel
-    FROM departments d
-    JOIN Users u ON u.DepartmentId = d.DepartmentId
-    JOIN user_FunctionalRoles ufr ON u.UserId = ufr.UserId
-    JOIN FunctionalRoles fr ON ufr.FuncRoleId = fr.FuncRoleId
-    JOIN FuncRole_AppRole fra ON fr.FuncRoleId = fra.FuncRoleId
-    JOIN ApplicationRoles ar ON fra.AppRoleId = ar.AppRoleId
-    WHERE d.DepartmentName IN (${placeholders})
-    ORDER BY d.DepartmentName, u.FullName;
-  `;
+  SELECT d.DepartmentId, d.DepartmentName, u.UserId, u.FullName,
+         fr.RoleName AS FunctionalRole, ar.AppRoleName, ar.PrivilegeLevel
+  FROM departments d
+  JOIN Users u ON u.DepartmentId = d.DepartmentId
+  JOIN user_FunctionalRoles ufr ON u.UserId = ufr.UserId
+  JOIN FunctionalRoles fr ON ufr.FuncRoleId = fr.FuncRoleId
+  JOIN FuncRole_AppRole fra ON fr.FuncRoleId = fra.FuncRoleId
+  JOIN ApplicationRoles ar ON fra.AppRoleId = ar.AppRoleId
+  WHERE d.DepartmentName IN (${placeholders})
+  ORDER BY d.DepartmentName, u.FullName;
+`;
+
   const [rows] = await db.query(query, departmentNames);
   return rows;
 }
+
 
 function mapDetailstoDepartment(rows, assignedAppRolesByUser) {
   const departmentMap = new Map();
 
   for (const row of rows) {
-
     if (!departmentMap.has(row.DepartmentId)) {
       departmentMap.set(row.DepartmentId, {
         departmentId: row.DepartmentId,
@@ -96,41 +99,44 @@ function mapDetailstoDepartment(rows, assignedAppRolesByUser) {
 
     const department = departmentMap.get(row.DepartmentId);
 
-    // Add user to department if not already present.
-    // Maybe map userId(key) to user-object(value)?
-    let user = department.departmentUsers.find(u => u.UserId === row.UserId);
+    // Find or create user in this department
+    let user = department.departmentUsers.find(u => u.userId === row.UserId);
     if (!user) {
       user = {
-        UserId: row.UserId,
-        FullName: row.FullName,
-        FunctionalRole: [],
+        userId: row.UserId,
+        fullName: row.FullName,
+        funcRoles: [],           // ✅ corrected key name
         rogueAppRoles: []
       };
       department.departmentUsers.push(user);
-    };
+    }
 
-    let funcRole = user.FunctionalRole.find(fr => fr.name === row.FunctionalRole);
+    // Find or create functional role for this user
+    let funcRole = user.funcRoles.find(fr => fr.name === row.FunctionalRole);
     if (!funcRole) {
       funcRole = {
         name: row.FunctionalRole,
         appRoles: []
       };
-      user.FunctionalRole.push(funcRole);
+      user.funcRoles.push(funcRole);
     }
 
-    funcRole.appRoles.push({
-      name: row.AppRoleName,
-      PrivLevel: row.PrivilegeLevel
-    });
+    // Avoid duplicate appRoles
+    if (!funcRole.appRoles.some(ar => ar.name === row.AppRoleName)) {
+      funcRole.appRoles.push({
+        name: row.AppRoleName,
+        PrivLevel: row.PrivilegeLevel
+      });
+    }
   }
 
   // Identify rogue app roles for each user
   for (const department of departmentMap.values()) {
     for (const user of department.departmentUsers) {
-      const assigned = assignedAppRolesByUser[user.UserId] || [];
+      const assigned = assignedAppRolesByUser[user.userId] || [];
 
       const expectedAppRoleNames = new Set(
-        user.FunctionalRole.flatMap(fr =>
+        user.funcRoles.flatMap(fr =>
           fr.appRoles.map(ar => ar.name)
         )
       );
@@ -145,7 +151,8 @@ function mapDetailstoDepartment(rows, assignedAppRolesByUser) {
   }
 
   return Array.from(departmentMap.values());
-};
+}
+;
 
 // TODO: remove departmentIds from function signature, if not used. (also remember to remove from function call in getAllDepartmentOverviews and in the controller)
 const getDepartmentOverview = async (departmentNames, departmentIds) => {
@@ -172,6 +179,7 @@ const getDepartmentOverview = async (departmentNames, departmentIds) => {
   // return groupByUserWithFuncRoles(rows, assignedAppRolesByUser);
   const departmentData = mapDetailstoDepartment(rows, assignedAppRolesByUser);
 
+  console.log("Department data list:", departmentData[0]);
   return departmentData;
 };
 
@@ -184,6 +192,7 @@ const getAllDepartmentOverviews = async () => {
   const departmentIds = departments.map(department => department.DepartmentId);
 
   const departmentDataList = await getDepartmentOverview(departmentNames, departmentIds);
+
 
   return departmentDataList;
 };
