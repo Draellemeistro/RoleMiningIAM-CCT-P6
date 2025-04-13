@@ -6,6 +6,8 @@ import { fileURLToPath } from 'url';
 
 import userRoutes from './routes/userRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
+import departmentRoutes from './routes/departmentRoutes.js';
+
 import analysisRoutes from './routes/analysisRoutes.js';
 
 dotenv.config();
@@ -19,7 +21,10 @@ app.use(cors());
 // Routes
 app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);
+app.use('/api/departments', departmentRoutes);
+
 app.use('/api/analysis', analysisRoutes);
+
 
 // Serve frontend (adjust path for ESM)
 const __filename = fileURLToPath(import.meta.url);
