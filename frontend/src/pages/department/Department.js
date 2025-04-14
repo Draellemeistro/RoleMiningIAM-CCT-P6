@@ -4,9 +4,8 @@ import config from "../../config";
 import { Box, Autocomplete, TextField, Button } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-// import DepartmentDataTable from "./Tables";
-// import DepartmentDataGrid from "./Tables";
-import MutliDepartmentDataGrid from "./Tables";
+// import MutliDepartmentDataGrid from "./TableUserRows";
+import MutliDepartmentDataGrid from "./TableUserCols";
 import { Modal, Typography } from "@mui/material";
 
 const Department = () => {
