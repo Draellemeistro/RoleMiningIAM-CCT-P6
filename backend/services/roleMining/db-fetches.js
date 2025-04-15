@@ -1,4 +1,4 @@
-import db from '../db.js';
+import db from '../../models/db.js';
 import { QUERY_USERS, QUERY_PRMS, QUERY_ROLES, QUERY_UA, QUERY_PA, QUERY_USER_PRMS_HIST } from './queries.js';
 
 // fetch all functions

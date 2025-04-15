@@ -1,10 +1,16 @@
 import mysql from 'mysql2/promise';
 import fs from 'fs';
 import dotenv from 'dotenv';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const createDB = async () => {
+  const sslPath = path.join(__dirname, '..', 'ssl', 'DigiCertGlobalRootCA.crt.pem');
   const connection = await mysql.createConnection({
     host: process.env.DB_URL,
     user: process.env.DB_USER,
@@ -12,7 +18,7 @@ const createDB = async () => {
     database: process.env.DB_NAME,
     port: process.env.DB_PORT || 3306,
     ssl: {
-      ca: fs.readFileSync('./ssl/DigiCertGlobalRootCA.crt.pem')
+      ca: fs.readFileSync(sslPath),
     }
   });
 
