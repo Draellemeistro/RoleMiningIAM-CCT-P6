@@ -1,5 +1,6 @@
-/* . The user-permission assignment relation that
-specifies which individuals had access to which resources in the original system can be
+import db from '../../db.js';
+import Fetch from './db-fetches.js';
+/* . The user-permission assignment relation that specifies which individuals had access to which resources in the original system can be
 represented in the form of a Boolean matrix UPA.
 the rows and columns of the matrix correspond to users and permissions, respectively.
 If a user is assigned a particular permission, the corresponding entry of the matrix contains a 1; otherwise, it contains a 0.
@@ -10,37 +11,18 @@ the Boolean matrix UPA is decomposed into two Boolean matrices (UA and PA), whic
 together give the original access control policy. Besides UA and PA, the output may
 sometimes contain a role-role relationship constituting a role hierarchy.
 */
-const getAllAppRoles = async () => {
-  const [rows] = await db.query('SELECT AppRileId, AppRoleName, IsAdmin, PrivilegeLevel FROM ApplicationRoles');
-  return rows;
+
+const miningComponents = {
+  UPA: [], // User-Permission Assignment matrix
+  UA: [], // User-Assignment matrix
+  PA: [], // Permission-Assignment matrix
+  users: [], // Users
+  PRMS: [], // Permissions
+  roles: [], // Roles
 };
 
-const getUserAppRoles = async () => {
-
-  const [rows] = await db.query(`
-
-    SELECT uh.UserId, ar.AppRoleId, ar.PrivilegeLevel
-
-    FROM User_AppRoles_History uh
-
-    JOIN ApplicationRoles ar ON uh.AppRoleId = ar.AppRoleId
-
-    WHERE uh.RevokedDate IS NULL
-
-  `);
-
-  return rows;
-
+const makeMatrixUPA = async () => {
+  // the UPA relation can be derived by joining the following tables:
+  // users → user_functionalroles → functionalroles → funcrole_approle → applicationroles
 };
 
-const fetchUPA = async () => {
-};
-
-const fetchUA = async () => {
-};
-
-const fetchPA = async () => {
-};
-
-fetchDepartmentUPA = async () => {
-};

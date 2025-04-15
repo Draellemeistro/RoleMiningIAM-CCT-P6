@@ -105,7 +105,7 @@ function mapDetailstoDepartment(rows, assignedAppRolesByUser) {
       user = {
         userId: row.UserId,
         fullName: row.FullName,
-        funcRoles: [],           // ✅ corrected key name
+        funcRoles: [],
         rogueAppRoles: []
       };
       department.departmentUsers.push(user);
@@ -121,7 +121,8 @@ function mapDetailstoDepartment(rows, assignedAppRolesByUser) {
       user.funcRoles.push(funcRole);
     }
 
-    // Avoid duplicate appRoles
+    // Avoid duplicate appRoles hhhmmmmm vent lidt
+    // TODO: undersøg om det fucker med tabeldannelse i frontend
     if (!funcRole.appRoles.some(ar => ar.name === row.AppRoleName)) {
       funcRole.appRoles.push({
         name: row.AppRoleName,
@@ -202,30 +203,3 @@ export default {
   getDepartmentOverview,
   getAllDepartmentOverviews,
 };
-
-// [
-//   {
-//     departmentId: 1,
-//     departmentName: "IT",
-//     departmentUsers: [
-//       {
-//         UserId: 72,
-//         FullName: "Robb Eveling",
-//         FunctionalRole: [...],
-//         rogueAppRoles: [...]
-//       },
-//       ...
-//     ]
-//   },
-//   ...
-// ]
-//
-//  OOOORRRRR
-//
-// {
-//   departments: {
-//     1: { departmentName: "IT", users: [...] },
-//     2: { departmentName: "HR", users: [...] }
-//   }
-// }
-
