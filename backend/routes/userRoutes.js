@@ -1,7 +1,10 @@
-// routes/USER.js
 import express from 'express';
+import userController from '../controllers/userController.js';
+
 const router = express.Router();
 
-// Du kan tilføje rigtige routes senere her
+router.get('/', userController.getUsers);
+router.get('/:userId', userController.getUserInfo);
+router.get('/:userId/access', userController.getUserAccessDetails);
 
-export default router; // 👈 vigtig
+export default router;
