@@ -1,5 +1,5 @@
 import db from '../../models/db.js';
-import { QUERY_USERS, QUERY_PRMS, QUERY_ROLES, QUERY_UA, QUERY_PA, QUERY_USER_PRMS_HIST } from './queries.js';
+import { QUERY_USERS, QUERY_PRMS, QUERY_ROLES, QUERY_UA, QUERY_PA, QUERY_USER_PERMS, QUERY_USER_PRMS_HIST, QUERY_UPA } from './queries.js';
 
 // fetch all functions
 //
@@ -29,6 +29,11 @@ const fetchAllPA = async () => {
   return rows;
 }
 
+const fetchAllUPA = async () => {
+  const [rows] = await db.query(QUERY_UPA);
+  return rows;
+}
+
 const fetchAllUserPRMSHist = async () => {
   const [rows] = await db.query(QUERY_USER_PRMS_HIST);
   return rows;
@@ -41,19 +46,22 @@ const fetchDepUsers = async (depFilter = {}) => {
   const { depIds, depNames } = depFilter;
   let query = QUERY_USERS;
   const params = [];
+
   // To handle multiple departments and filter by them
   if (depIds && depIds.length) {
     query += ` WHERE u.DepartmentId IN (${depIds.map(() => '?').join(', ')})`;
     params.push(...depIds);
   } else if (depNames && depNames.length) {
-    query += ` WHERE d.DepartmentName IN (${depNames.map(() => '?').join(', ')})`; // u.departmentName eller d.departmentName?
+    query += ` WHERE d.DepartmentName IN (${depNames.map(() => '?').join(', ')})`;
     params.push(...depNames);
   } else {
     return [];
   }
+
   const [rows] = await db.query(query, params);
   return rows;
-}
+};
+
 
 const fetchDepUA = async (userIds) => {
   let query = QUERY_UA;
@@ -129,12 +137,26 @@ const fetchDepUserPRMSHist = async (userIds) => {
   return rows;
 }
 
+const fetchDepUserFuncApps = async (userIds) => {
+  let query = QUERY_USER_PERMS;
+  const params = [];
+  if (userIds && userIds.length) {
+    query += ` WHERE UserId IN (${userIds.map(() => '?').join(', ')})`;
+    params.push(...userIds);
+  } else {
+    return [];
+  }
+  const [rows] = await db.query(query, params);
+  return rows;
+}
+
 export default {
   fetchAllUsers,
   fetchAllPRMS,
   fetchAllRoles,
   fetchAllUA,
   fetchAllPA,
+  fetchAllUPA,
   fetchAllUserPRMSHist,
 
   fetchDepUsers,
@@ -142,5 +164,7 @@ export default {
   fetchDepPRMS,
   fetchDepRoles,
   fetchDepPA,
-  fetchDepUserPRMSHist
+  fetchDepUserPRMSHist,
+  fetchDepUserFuncApps
 };
+
