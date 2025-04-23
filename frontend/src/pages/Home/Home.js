@@ -1,9 +1,10 @@
 import React from 'react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
-import Navbar from '../components/Navbar';
+import { useNavigate } from 'react-router-dom';
 
 const Home = () => {
+    const navigate = useNavigate();
     return (
         <Box
             sx={{
@@ -24,6 +25,7 @@ const Home = () => {
                     width: '250px', // Fixed width for all buttons
                     textAlign: 'center' // Ensures text is centered
                 }}
+                onClick={() => navigate('/functionalRoles')}
             >
                 Functional roles
             </Button>
@@ -37,6 +39,7 @@ const Home = () => {
                     width: '250px', // Fixed width for all buttons
                     textAlign: 'center' // Ensures text is centered
                 }}
+                onClick={() => navigate('/department')}
             >
                 Department 
             </Button>
@@ -50,11 +53,12 @@ const Home = () => {
                     width: '250px', // Fixed width for all buttons
                     textAlign: 'center' // Ensures text is centered
                 }}
+                onClick={() => navigate('/user')}
             >
                 User
             </Button>
             
-            <Navbar />
+            
         </Box>
     );
 };
