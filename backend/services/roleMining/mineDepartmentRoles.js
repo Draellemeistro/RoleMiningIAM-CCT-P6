@@ -1,6 +1,7 @@
 import db from '../../models/db.js';
 import fs from 'fs';
 import Fetch from './db-fetches.js';
+import Miner from './miningAlgorithms.js';
 /* . The user-permission assignment relation that specifies which individuals had access to which resources in the original system can be
 represented in the form of a Boolean matrix UPA.
 the rows and columns of the matrix correspond to users and permissions, respectively.
@@ -88,7 +89,7 @@ function groupRolesByUserId(data, roleType) {
 }
 
 const makeMatrixUPA = async (departmentIds) => {
-  // the UPA relation can be derived by joining the following tables:
+  // the UPA relationcan be derived by joining the following tables:
   // users → user_functionalroles → functionalroles → funcrole_approle → applicationroles
   const users = await Fetch.fetchDepUsers({ depIds: departmentIds });
   const userIds = users.map((user) => user.userId);
@@ -98,7 +99,7 @@ const makeMatrixUPA = async (departmentIds) => {
 
   const readyForMatrix = groupAppRolesByUser(usersAppRoles, usersFuncApps);
   const matrix = generateMatrix(readyForMatrix);
-
+  const minedRoles = mineAndCompare(matrix);
   // const { initRoles, generatedRoles } = fastMiner(matrix);
   // const csv = generateCSVFromMatrixObject(matrix);
   // fs.writeFileSync('matrix.csv', csv, 'utf8');
@@ -138,8 +139,15 @@ const generateMatrix = (userPermsMapping) => {
   }
 };
 
+const mineAndCompare = ({ Apps, matrix }) => {
+  const minedRoles = Miner.fastMiner({ Apps, matrix });
+  // const minedRoles = anotherMiner({ Apps, matrix });
 
+  console.log(JSON.stringify(minedRoles, null, 2));
+  console.log("Mined Roles:", minedRoles);
 
+  return minedRoles;
+}
 
 async function getMiningComponentsDepartment(departmentIds) {
   const users = await Fetch.fetchDepUsers({ depIds: departmentIds });

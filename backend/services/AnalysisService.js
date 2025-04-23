@@ -19,11 +19,12 @@ async function testMiner2(depIds) {
   if (!Array.isArray(depIds) || depIds.length === 0) {
     console.log("departmentList must be a non-empty array");
   } else {
-    console.log("depIds", depIds);
+    const abc = 111;
+    // console.log("depIds", depIds);
   }
   try {
     const depComponents = await Miner.makeMatrixUPA([1, 2]);
-    console.log("ComponentsForMining: ", depComponents);
+    // console.log("ComponentsForMining: ", depComponents);
   } catch (error) {
     console.error("Error analyzing roles:", error.message);
   }

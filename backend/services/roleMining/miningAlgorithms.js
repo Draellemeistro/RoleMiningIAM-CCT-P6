@@ -88,7 +88,7 @@ const fastMiner = ({ Apps, matrix }) => {
     generatedRoles
   };
 };
-const dickminer = ({ Apps, matrix }) => {
+const anotherMiner = ({ Apps, matrix }) => {
   // Step 1: Identify InitRoles (users with identical permission sets)
   const roleMap = new Map(); // key: permission vector string, value: array of userIds
 
@@ -138,8 +138,19 @@ const dickminer = ({ Apps, matrix }) => {
     users: Array.from(userSet)
   }));
 
+  console.log(JSON.stringify(initRoles, null, 2));
+  console.log(JSON.stringify(generatedRoles, null, 2));
+
   return {
     initRoles,
     generatedRoles
   };
+};
+
+export default {
+  basicRMP,
+  edgeRMP,
+  weightedStructuralComplexityOptimization,
+  fastMiner,
+  anotherMiner
 };
