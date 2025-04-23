@@ -1,11 +1,10 @@
 import Navbar from "../components/Navbar";
 import config from "../../config";
-// import { drawerHeight } from "../components/Navbar"; // Adjust the import path as needed
+// import { drawerHeight } from "../components/Navbar";
 import { Box, Autocomplete, TextField, Button } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-// import MutliDepartmentDataGrid from "./TableUserRows";
-import MutliDepartmentDataGrid from "./TableUserCols";
+import DepartmentDataGrid from "./TableUserRows";
 import { Modal, Typography } from "@mui/material";
 
 const Department = () => {
@@ -30,8 +29,6 @@ const Department = () => {
   }, []);
 
   const handleAnalyze = async () => {
-    // const departmentNames = selectedDepartments.map((department) => department.DepartmentName);
-
     try {
       const res = await axios.post(
         `${config.apiBaseUrl}/departments/analyze-specifics`,
@@ -59,7 +56,6 @@ const Department = () => {
         }}
       >
         {/* Autocomplete for selecting departments */}
-
         <Autocomplete
           multiple
           id="departments-autocomplete"
@@ -84,18 +80,6 @@ const Department = () => {
         >
           Analyze
         </Button>
-        <Button
-          //TODO: Fix button, doesn't send all departments to backend,  because of a delay in setting state
-          variant="outlined"
-          onClick={() => {
-            setSelectedDepartments(departments);
-            setTimeout(() => {
-              handleAnalyze();
-            }, 0);
-          }}
-        >
-          Show Overview of All Departments
-        </Button>
       </Box>
 
       {/* Result section */}
@@ -103,7 +87,7 @@ const Department = () => {
         <Box sx={{ marginTop: 4, }}>
           {/*<DepartmentDataTable departmentDataArr={analysisResult} />
 */}
-          <MutliDepartmentDataGrid departmentDataArr={analysisResult} />
+          <DepartmentDataGrid departmentDataArr={analysisResult} />
           {/* Modal for raw JSON */}
           <Box sx={{ textAlign: "center", mt: 2 }}>
             <Button variant="outlined" onClick={handleOpenModal}>

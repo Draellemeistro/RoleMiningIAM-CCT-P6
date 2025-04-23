@@ -1,7 +1,4 @@
 import db from '../models/db.js';
-// AnalysisService.fetchDepartments();
-// AnalysisService.getDepartmentOverview(departmentNames, departmentIds);
-// await AnalysisService.getAllDepartmentOverviews();
 
 function groupByUserWithFuncRoles(rows, assignedAppRolesByUser) {
   const userMap = new Map();
@@ -36,7 +33,7 @@ function groupByUserWithFuncRoles(rows, assignedAppRolesByUser) {
     });
   }
 
-  // 🧠 Identify rogue app roles per user
+  // Identify rogue(singleton) app roles per user
   for (const [userId, userData] of userMap.entries()) {
     const assigned = assignedAppRolesByUser[userId] || [];
 
@@ -121,8 +118,7 @@ function mapDetailstoDepartment(rows, assignedAppRolesByUser) {
       user.funcRoles.push(funcRole);
     }
 
-    // Avoid duplicate appRoles hhhmmmmm vent lidt
-    // TODO: undersøg om det fucker med tabeldannelse i frontend
+    // Avoid duplicate appRoles hhhmmmmm vent lidt (messer den med tabeldannelse i frontend?)
     if (!funcRole.appRoles.some(ar => ar.name === row.AppRoleName)) {
       funcRole.appRoles.push({
         name: row.AppRoleName,
@@ -177,7 +173,6 @@ const getDepartmentOverview = async (departmentNames, departmentIds) => {
   }
 
   // Build structured result
-  // return groupByUserWithFuncRoles(rows, assignedAppRolesByUser);
   const departmentData = mapDetailstoDepartment(rows, assignedAppRolesByUser);
 
   console.log("Department data list:", departmentData[0]);
