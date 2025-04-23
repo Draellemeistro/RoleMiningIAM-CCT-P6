@@ -1,10 +1,10 @@
 import Navbar from "../components/Navbar";
 import config from "../../config";
-// import { drawerHeight } from "../components/Navbar"; // Adjust the import path as needed
+// import { drawerHeight } from "../components/Navbar";
 import { Box, Autocomplete, TextField, Button } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import DepartmentDataTable from "./Tables";
+import DepartmentDataGrid from "./TableUserRows";
 import { Modal, Typography } from "@mui/material";
 
 const Department = () => {
@@ -19,7 +19,7 @@ const Department = () => {
   useEffect(() => {
     const fetchDepartments = async () => {
       try {
-        const res = await axios.get(`${config.apiBaseUrl}/analysis`);
+        const res = await axios.get(`${config.apiBaseUrl}/departments`);
         setDepartments(res.data);
       } catch (err) {
         console.error("Error fetching details for departments:", err);
@@ -29,11 +29,9 @@ const Department = () => {
   }, []);
 
   const handleAnalyze = async () => {
-    // const departmentNames = selectedDepartments.map((department) => department.DepartmentName);
-
     try {
       const res = await axios.post(
-        `${config.apiBaseUrl}/analysis/analyze-specifics`,
+        `${config.apiBaseUrl}/departments/analyze-specifics`,
         { departmentList: selectedDepartments }
       );
 
@@ -64,8 +62,14 @@ const Department = () => {
           options={departments}
           getOptionLabel={(option) => option.DepartmentName}
           value={selectedDepartments}
-          onChange={(event, newValue) => setSelectedDepartments(newValue)}
-          renderInput={(params) => <TextField {...params} label="Select Departments" />}
+          onChange={(event, newValue) => {
+            if (newValue.length <= 2) {
+              setSelectedDepartments(newValue);
+            }
+          }}
+          renderInput={(params) => (
+            <TextField {...params} label="Select up to 2 Departments" />
+          )}
           sx={{ width: 300 }}
         />
 
@@ -76,25 +80,14 @@ const Department = () => {
         >
           Analyze
         </Button>
-        <Button
-          //TODO: Fix button, doesn't send all departments to backend,  because of a delay in setting state
-          variant="outlined"
-          onClick={() => {
-            setSelectedDepartments(departments);
-            setTimeout(() => {
-              handleAnalyze();
-            }, 0);
-          }}
-        >
-          Analyze All Departments
-        </Button>
       </Box>
 
       {/* Result section */}
       {analysisResult && (
         <Box sx={{ marginTop: 4, }}>
-          <DepartmentDataTable departmentDataArr={analysisResult} />
-
+          {/*<DepartmentDataTable departmentDataArr={analysisResult} />
+*/}
+          <DepartmentDataGrid departmentDataArr={analysisResult} />
           {/* Modal for raw JSON */}
           <Box sx={{ textAlign: "center", mt: 2 }}>
             <Button variant="outlined" onClick={handleOpenModal}>
