@@ -4,6 +4,7 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import Home from "./pages/Home/Home";
 import Department from "./pages/department/Department";
+import Mining from "./pages/department/mining/Mining";
 import FunctionalRoles from "./pages/functionalRoles/functionalRoles";
 import User from "./pages/user/User";
 
@@ -87,6 +88,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/department" element={<Department />} />
+          <Route path="/department/mining" element={<Mining />} />
           <Route path="/functionalRoles" element={<FunctionalRoles />} />
           <Route path="/user" element={<User />} />
         </Routes>

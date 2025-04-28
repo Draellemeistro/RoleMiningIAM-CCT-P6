@@ -1,7 +1,7 @@
 import db from '../../models/db.js';
 import fs from 'fs';
 import Fetch from './db-fetches.js';
-import Miner from './miningAlgs.js';
+import Miner from './miningAlgorithms.js';
 /* . The user-permission assignment relation that specifies which individuals had access to which resources in the original system can be
 represented in the form of a Boolean matrix UPA.
 the rows and columns of the matrix correspond to users and permissions, respectively.
@@ -134,7 +134,7 @@ const generateMatrix = (userPermsMapping) => {
   }
 
   return {
-    apps: sortedAppRoles,
+    Apps: sortedAppRoles,
     matrix
   }
 };
@@ -202,6 +202,4 @@ export default {
   getMiningComponents,
   getMiningComponentsDepartment,
   makeMatrixUPA,
-  groupAppRolesByUser,
-  generateMatrix,
 };
