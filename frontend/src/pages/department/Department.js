@@ -30,6 +30,18 @@ const Department = () => {
     fetchDepartments();
   }, []);
 
+  const handleMining = async () => {
+    try {
+      const res = await axios.post(
+        `${config.apiBaseUrl}/departments/mine`,
+        { departmentList: selectedDepartments }
+      );
+      setOverviewResult(res.data);
+    } catch (err) {
+      console.error("Error during mining-analysis:", err);
+    }
+  };
+
   const handleOverview = async () => {
     try {
       const res = await axios.post(
@@ -92,9 +104,9 @@ const Department = () => {
             width: '250px', // Fixed width for all buttons
             textAlign: 'center' // Ensures text is centered
           }}
-          onClick={() => navigate('/department/mining', { state: { selectedDepartments } })}
+          onClick={handleMining}
         >
-          Analyze
+          Mine Roles
         </Button>
       </Box>
 

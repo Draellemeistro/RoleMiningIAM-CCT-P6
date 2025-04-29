@@ -10,6 +10,7 @@ const mineDepartments = async (departmentIds) => {
   const users = await Fetch.fetchDepUsers({ depIds: departmentIds });
   const userIds = users.map((user) => user.userId);
 
+
   const usersFuncApps = await Fetch.fetchDepUserFuncApps(userIds);
   const usersAppRoles = await Fetch.fetchDepUserPRMSHist(userIds);
 
@@ -27,15 +28,10 @@ const mineDepartments = async (departmentIds) => {
 
   //TODO: STUUUUUUFFFF
   const { apps, matrix } = Formatter.generateMatrix(readyForMatrix);
-  // const csv = generateCSVFromMatrixObject({ Apps: apps, matrix });
-  // fs.writeFileSync('matrix.csv', csv, 'utf8');
-  // fs.writeFileSync('matrix.json', JSON.stringify(matrix, null, 2), 'utf8');
-  // fs.writeFileSync('apps.json', JSON.stringify(apps, null, 2), 'utf8');
-  const { candidateRoles, optRoles, entitlementCount } = Miner.examplefunc({ matrix, appRoles });
+  const { optRoles, entitlementCount } = Miner.examplefunc({ matrix, appRoles });
 
   return {
     appRoles: appRoles,
-    candRoles: candidateRoles,
     optRoles: optRoles,
     entitlementCount: entitlementCount,
   };

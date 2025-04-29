@@ -1,4 +1,7 @@
 import db from '../models/db.js';
+import Miner from './roleMining/fastMiner.js';
+import Formatter from './roleMining/mineDepartmentRoles.js';
+import Fetch from './roleMining/db-fetches.js';
 
 function groupByUserWithFuncRoles(rows, assignedAppRolesByUser) {
   const userMap = new Map();
@@ -179,6 +182,43 @@ const getDepartmentOverview = async (departmentNames, departmentIds) => {
   return departmentData;
 };
 
+const mineDepartments = async (departmentNames, departmentIds) => {
+  const departmentOverviews = await getDepartmentOverview(departmentNames);
+  const users = await Fetch.fetchDepUsers({ depIds: departmentIds });
+  const userIds = users.map((user) => user.userId);
+
+  const usersFuncApps = await Fetch.fetchDepUserFuncApps(userIds);
+  const usersAppRoles = await Fetch.fetchDepUserPRMSHist(userIds);
+
+  // TODO:
+  const readyForMatrix = Formatter.groupAppRolesByUser(usersAppRoles, usersFuncApps);
+  const allAppIds = [];
+  for (const userId in readyForMatrix) {
+    allAppIds.push(...readyForMatrix[userId]);
+  }
+
+  const appList = await Fetch.fetchDepPRMS(allAppIds);
+  const appRoles = appList.reduce((acc, { appRoleId, appRoleName }) => {
+    acc[appRoleId] = appRoleName;
+    return acc;
+  }, {});
+
+  const { apps, matrix } = Formatter.generateMatrix(readyForMatrix);
+  const { optRoles, entitlementCount } = Miner.examplefunc({ matrix, appRoles });
+
+  const miningRes = {
+    appRoles: appRoles,
+    optRoles: optRoles,
+    entitlementCount: entitlementCount,
+  }
+
+  const returnedData = [];
+  returnedData.push(miningRes);
+  returnedData.push(...departmentOverviews);
+
+  return returnedData;
+};
+
 // Skab alle afdelingsoversigter... måske ikke brugbar, men...
 const getAllDepartmentOverviews = async () => {
   const departments = await fetchDepartments();
@@ -197,4 +237,5 @@ export default {
   fetchDepartments,
   getDepartmentOverview,
   getAllDepartmentOverviews,
+  mineDepartments,
 };

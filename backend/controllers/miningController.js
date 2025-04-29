@@ -17,8 +17,6 @@ const analyzeDepartments = async (req, res) => {
 
   try {
     const matrixComponents = await MiningService.mineDepartments(departmentIds);
-    console.log("matrixComponents");
-    console.log(JSON.stringify(matrixComponents, null, 2));
     res.status(200).json(matrixComponents);
   } catch (error) {
     console.error("Error mining specified departments:", error.message);

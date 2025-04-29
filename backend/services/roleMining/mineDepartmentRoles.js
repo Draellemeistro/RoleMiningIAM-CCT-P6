@@ -18,7 +18,7 @@ sometimes contain a role-role relationship constituting a role hierarchy.
 
 function groupAppRolesByUser(uApps, uFAPs) {
   const tempMap = new Map();
-
+  const userPerms = new Map();
   // Step 1: Collect all appRoleIds per user in a Set
   function addRole(userId, appRoleId) {
     if (!tempMap.has(userId)) {

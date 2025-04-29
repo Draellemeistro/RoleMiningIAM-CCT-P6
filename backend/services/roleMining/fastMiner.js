@@ -8,6 +8,7 @@ function fastMinerFromMatrix(components) {
   // Remove duplicate rows and all-zero rows
   const uniqueUP = Array.from(new Set(UP.map(x => JSON.stringify(x)))).map(x => JSON.parse(x));
   const cleanedUP = uniqueUP.filter(x => x.some(p => p !== 0));
+  console.log('cleanedUP', cleanedUP);
 
   const InitRoles = [];
   const OrigCount = [];
@@ -15,7 +16,9 @@ function fastMinerFromMatrix(components) {
   const GenCount = [];
   const Contributors = [];
 
+  let loopCount = 0;
   for (const user of cleanedUP) {
+    // console.log('user', user);
     const existsIndex = InitRoles.findIndex(r => arraysEqual(r, user));
     if (existsIndex === -1) {
       InitRoles.push(user);
@@ -53,17 +56,17 @@ function fastMinerFromMatrix(components) {
 
 // TODO: entitlementCount is not correct. still based on the original UP, which is binary. (i think)
 function basicRMP(UPMatrix, CandRolesMatrix, MaxRoles = 100) {
-    const UP = UPMatrix.map(row => [...row]);
-    const Constraints = Array.from({ length: UP[0].length }, () => Array(CandRolesMatrix.length).fill(1));
-    const OptRoles = [];
-    const EntitlementCount = [];
-    let iters = 0;
-    let UP_Remain = UP.map(row => [...row]);
+  const UP = UPMatrix.map(row => [...row]);
+  const Constraints = Array.from({ length: UP[0].length }, () => Array(CandRolesMatrix.length).fill(1));
+  const OptRoles = [];
+  const EntitlementCount = [];
+  let iters = 0;
+  let UP_Remain = UP.map(row => [...row]);
 
   // console.log('\nUPMatrix', UPMatrix);
   // console.log('\nCandRolesMatrix', CandRolesMatrix);
 
-    
+
   // Fix constraints assignment
   for (let i = 0; i < CandRolesMatrix.length; i++) {
     for (let j = 0; j < UP_Remain.length; j++) {
@@ -133,7 +136,7 @@ function sumMatrix(matrix) {
 
 // Pretty print a role as readable names
 function translateRole(roleArray, appRoles) {
-   const permissions = [];
+  const permissions = [];
   for (let i = 0; i < roleArray.length; i++) {
     const permId = roleArray[i];
     const permName = appRoles[String(permId)];
@@ -154,14 +157,11 @@ const examplefunc = (components) => {
   const { optRoles, entitlementCount } = basicRMP(matrix, candidateRoles);
 
   //pretty print the roles
-  for (const role of optRoles) {
-    console.log('Role:', translateRole(role, appRoles));
-  }
-
-  console.log('entitlementCount:', entitlementCount);
+  // for (const role of optRoles) {
+  //   console.log('Role:', translateRole(role, appRoles));
+  // }
 
   return {
-    candidateRoles: candidateRoles,
     optRoles: optRoles,
     entitlementCount: entitlementCount,
   };

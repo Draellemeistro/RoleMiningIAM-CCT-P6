@@ -6,7 +6,7 @@ const rogueText = " (outside func-roles)"; // smæk på rogue app roles
 const fNameWidth = 80;
 const funcRoleWidth = 90;
 const appRoleWidth = 60;
-const colHeaderWidth = 70;
+const colHeaderWidth = 65;
 
 const colorCodings = {
   admin: "rgba(255, 0, 0, 0.2)",
@@ -52,15 +52,14 @@ const generatedRowStyles = Object.entries(colorCodings)
 // };
 
 export default function createMatrices(miningComponents) {
-  const initRoles = miningComponents.candRoles;
   const minedRoles = miningComponents.optRoles;
   const appRoles = miningComponents.appRoles;
+  const matrixOg = miningComponents.matrixOg;
 
-  const initRoleMatrix = formatMatrix({ appRoles, roleMatrix: initRoles, title: 'Initial Roles' });
+  const initRoleMatrix = formatMatrix({ appRoles, roleMatrix: matrixOg, title: 'Initial Roles' });
   const minedRoleMatrix = formatMatrix({ appRoles, roleMatrix: minedRoles, title: 'Mined Roles' });
 
   return visualizeMatrix([initRoleMatrix, minedRoleMatrix]);
-  console.log("minedRoles", minedRoles);
 };
 
 const formatMatrix = ({ appRoles, roleMatrix, title }) => {
@@ -79,7 +78,7 @@ const formatMatrix = ({ appRoles, roleMatrix, title }) => {
           display: 'flex', // Flexbox to center the text
           alignItems: 'center', // Vertically center
           justifyContent: 'center', // Horizontally center
-          height: '150px', // Adjust height as needed
+          height: '180px', // Adjust height as needed
           width: '50px', // Adjust width as needed
         }}>
         {colDef.headerName}
@@ -88,25 +87,20 @@ const formatMatrix = ({ appRoles, roleMatrix, title }) => {
   }));
 
   columns.push({ field: 'id', headerName: 'id', width: 150 });
-  columns.push({
-    field: 'roles',
-    headerName: 'roles',
-    width: fNameWidth,
-  });
   // { field: appRole.AppRoleName, headerName: appRole.AppRoleName, width: 150 };
 
 
-    let rowCounter = 0;
+  let rowCounter = 0;
   for (const matrixRow of roleMatrix) {
     const rowId = `role-${rowCounter}`; // field names must be strings
-    const row = { id: rowId || 'N/A', role: `role ${rowCounter}` || 'N/A' };
+    const row = { id: rowId || 'N/A' };
     rowCounter++;
     for (const appRoleId of Object.keys(appRoles)) {
       let prmId = appRoleId;
       if (typeof prmId === 'string') {
         prmId = Number(prmId);
       }
-        row[appRoleId] = matrixRow.includes(prmId) ? getPermLevel(appRoles, appRoleId) : ' '; // 1 if present, 4 if not
+      row[appRoleId] = matrixRow.includes(prmId) ? getPermLevel(appRoles, appRoleId) : ' '; // 1 if present, 4 if not
     }
 
     rows.push(row);
@@ -136,7 +130,8 @@ function getCellStyleClassUserRows(cellData) {
   const lower = value.toLowerCase();
 
   const match = Object.keys(colorCodings).find(key => lower.includes(key));
-  return match ? `priv-${match}` : ''; }
+  return match ? `priv-${match}` : '';
+}
 
 function visualizeMatrix(tables) {
   return (
@@ -146,7 +141,7 @@ function visualizeMatrix(tables) {
           <div style={{ marginBottom: '8px', fontWeight: 'bold', textAlign: 'center', fontSize: '20px' }}>
             {table.title || `Department ${idx + 1}`}
           </div>
-          <Box sx={{ height: 900, width: '90%' }}>
+          <Box sx={{ height: 900, width: '100%' }}>
             <DataGrid
               rows={table.rows}
               columns={table.columns}

@@ -2,10 +2,10 @@ import * as React from 'react';
 import Box from '@mui/material/Box';
 import { DataGrid } from '@mui/x-data-grid';
 
-const rogueText = " (outside func-roles)"; // smæk på rogue app roles
-const fNameWidth = 80;
-const funcRoleWidth = 90;
-const appRoleWidth = 60;
+const rogueText = "*"; // smæk på rogue app roles
+const fNameWidth = 120;
+const funcRoleWidth = 120;
+const appRoleWidth = 65;
 
 const colorCodings = {
   admin: "rgba(255, 0, 0, 0.2)",
@@ -53,14 +53,8 @@ export default function DepartmentDataGridRows({ departmentDataArr }) {
 // TODO: Make user clickable to open a modal with more information about the user (or send to another page)
 // TODO: Make the table sortable by column
 function generateTableUserRows(departmentData) {
-  if (!departmentData || !departmentData.departmentUsers) {
-    try {
-      console.error('Invalid department data:', departmentData.departmentUsers);
-    } catch (error) {
-      console.error('Error logging invalid department data:', error);
-    } finally {
-      return { rows: [], columns: [], title: departmentData?.departmentName || 'N/A' };
-    }
+  if (departmentData.optRoles) {
+    return generateMinerTable(departmentData);
   }
 
   let rowCounter = 1;
@@ -73,11 +67,6 @@ function generateTableUserRows(departmentData) {
     field: 'fullName',
     headerName: 'Full Name',
     width: fNameWidth,
-  });
-  columns.push({
-    field: 'funcRoles',
-    headerName: 'Functional Roles',
-    width: funcRoleWidth,
   });
 
   departmentData.departmentUsers.forEach((user) => {
@@ -95,9 +84,9 @@ function generateTableUserRows(departmentData) {
         funcRoleTracker.push(funcRole);
 
         funcRole.appRoles.forEach((appRole) => {
-          if (!appCols.some(col => col.field === appRole.name)) {
+          if (!appCols.some(col => col.field === appRole.name.replace(/\s*\([^)]*\)/g, '').trim())) {
             appCols.push({
-              field: appRole.name,
+              field: appRole.name.replace(/\s*\([^)]*\)/g, '').trim(),
               headerName: appRole.name,
               width: appRoleWidth,
               renderHeader: ({ colDef }) => (
@@ -109,7 +98,7 @@ function generateTableUserRows(departmentData) {
                     display: 'flex', // Flexbox to center the text
                     alignItems: 'center', // Vertically center
                     justifyContent: 'center', // Horizontally center
-                    height: '100px', // Adjust height as needed
+                    height: '120px', // Adjust height as needed
                     width: '50px', // Adjust width as needed
                   }}>
                   {colDef.headerName.replace(/\s*\([^)]*\)/g, '').trim()}
@@ -121,16 +110,16 @@ function generateTableUserRows(departmentData) {
       }
 
       funcRole.appRoles.forEach((appRole) => {
-        const appRoleName = appRole.name || 'N/A';
+        const appRoleName = appRole.name.replace(/\s*\([^)]*\)/g, '').trim() || 'N/A';
         const appRolePrivLevel = appRole.PrivLevel || 'N/A';
         row[appRoleName] = appRolePrivLevel;
       });
     });
 
     user.rogueAppRoles.forEach((rogueAppRole) => {
-      if (!appCols.some(col => col.field === rogueAppRole.name)) {
+      if (!appCols.some(col => col.field === rogueAppRole.name.replace(/\s*\([^)]*\)/g, '').trim())) {
         appCols.push({
-          field: rogueAppRole.name,
+          field: rogueAppRole.name.replace(/\s*\([^)]*\)/g, '').trim(),
           headerName: rogueAppRole.name,
           width: appRoleWidth,
           renderHeader: ({ colDef }) => (
@@ -142,7 +131,7 @@ function generateTableUserRows(departmentData) {
                 display: 'flex', // Flexbox to center the text
                 alignItems: 'center', // Vertically center
                 justifyContent: 'center', // Horizontally center
-                height: '100px', // Adjust height as needed
+                height: '120px', // Adjust height as needed
                 width: '50px', // Adjust width as needed
               }}>
               {colDef.headerName.replace(/\s*\([^)]*\)/g, '').trim()}
@@ -151,13 +140,18 @@ function generateTableUserRows(departmentData) {
         });
       }
 
-      row[rogueAppRole.name] = rogueAppRole.PrivLevel + rogueText || 'N/A';
+      row[rogueAppRole.name.replace(/\s*\([^)]*\)/g, '').trim()] = rogueAppRole.PrivLevel + rogueText || 'N/A';
     });
     rows.push(row);
     rowCounter++;
   });
 
   columns.push(...appCols);
+  columns.push({
+    field: 'funcRoles',
+    headerName: 'Functional Roles',
+    width: funcRoleWidth,
+  });
   return {
     rows: rows,
     columns: columns,
@@ -178,7 +172,7 @@ function FormatTablesForPageUserRows(tables) {
             <DataGrid
               rows={table.rows}
               columns={table.columns}
-              columnHeaderHeight={120}
+              columnHeaderHeight={130}
               getCellClassName={getCellStyleClassUserRows}
               showCellVerticalBorder
               showColumnVerticalBorder
@@ -207,13 +201,84 @@ function getCellStyleClassUserRows(cellData) {
   if (!value || typeof value !== 'string') return '';
 
   const lower = value.toLowerCase();
-  const isRogue = value.includes('outside func-roles');
+  const isRogue = value.includes('*');
 
   const match = Object.keys(colorCodings).find(key => lower.includes(key));
   const baseClass = match ? `priv-${match}` : '';
 
   return isRogue ? `${baseClass} rogue-cell` : baseClass;
 }
+
+function generateMinerTable(departmentData) {
+  const appRoles = departmentData.appRoles;
+  const roleMatrix = departmentData.optRoles;
+  const entitlementCount = departmentData.entitlementCount;
+  const title = "Mined Roles";
+  const columns = [];
+  const rows = [];
+  const appRoleCols = [];
+
+  Object.entries(appRoles).forEach(([appRoleId, appRole]) => {
+    const appRoleName = appRole.replace(/\s*\([^)]*\)/g, '').trim();
+    if (!appRoleCols.some(col => col.field === appRoleName)) {
+      const newCol = {
+        field: appRoleName,
+        headerName: appRole,
+        width: appRoleWidth,
+        renderHeader: ({ colDef }) => (
+          <div
+            style={{
+              transform: 'rotate(90deg)',
+              transformOrigin: 'center', // Centers the text rotation
+              whiteSpace: 'nowrap', // Prevents text from wrapping
+              display: 'flex', // Flexbox to center the text
+              alignItems: 'center', // Vertically center
+              justifyContent: 'center', // Horizontally center
+              height: '180px', // Adjust height as needed
+              width: '50px', // Adjust width as needed
+            }}>
+            {colDef.headerName.replace(/\s*\([^)]*\)/g, '').trim()}
+          </div>
+        ),
+      };
+      appRoleCols.push(newCol);
+    }
+  });
+
+  // { field: appRole.AppRoleName, headerName: appRole.AppRoleName, width: 150 };
+
+  let rowCounter = 0;
+  for (const matrixRow of roleMatrix) {
+    const rowId = `role-${rowCounter}`; // field names must be strings
+    const row = { id: rowId || 'N/A' };
+    rowCounter++;
+    console.log('matrixRow', matrixRow);
+    for (const matrixCell of matrixRow) {
+      const prmId = matrixCell;
+      if (prmId !== 0 && prmId !== null && prmId !== undefined) {
+        const appRoleName = appRoles[String(prmId)]
+        const appRoleNameCleaned = appRoleName.replace(/\s*\([^)]*\)/g, '').trim() || 'N/A';
+        row[appRoleNameCleaned] = getPermLevel(appRoles, prmId) || ' '; // 1 if present, 4 if not
+      }
+    }
+    rows.push(row);
+  }
+  columns.push({ field: 'id', headerName: 'roles', width: 120 });
+  columns.push(...appRoleCols);
+
+  return {
+    columns,
+    rows,
+    title
+  };
+}
+
+const getPermLevel = (appRoles, permId) => {
+  const appName = appRoles[String(permId)];
+  const match = appName.match(/\((\w+)\saccess\)/);
+  return match ? match[1] : null;
+}
+
 
 // const infoWidth = 250;
 //
