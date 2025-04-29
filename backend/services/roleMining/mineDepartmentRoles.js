@@ -121,6 +121,7 @@ const generateCSVFromMatrixObject = ({ Apps, matrix }) => {
 
 const generateMatrix = (userPermsMapping) => {
   const uniqueAppRoles = new Set();
+  // fs.writeFileSync('userPermsMapping.json', JSON.stringify(userPermsMapping, null, 2), 'utf8');
   for (const roles of Object.values(userPermsMapping)) {
     roles.forEach((role) => uniqueAppRoles.add(role));
   }
@@ -129,7 +130,7 @@ const generateMatrix = (userPermsMapping) => {
   const matrix = [];
   for (const [userId, roles] of Object.entries(userPermsMapping)) {
     const roleSet = new Set(roles);
-    const row = sortedAppRoles.map((role) => (roleSet.has(role) ? 1 : 0));
+    const row = sortedAppRoles.map((role) => (roleSet.has(role) ? role : 0));
     matrix.push({ userId, row });
   }
 

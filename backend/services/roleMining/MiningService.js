@@ -1,4 +1,5 @@
 import db from '../../models/db.js';
+import fs from 'fs';
 import Formatter from './mineDepartmentRoles.js';
 import Fetch from './db-fetches.js';
 // import Miner from './miningAlgs.js';
@@ -26,14 +27,17 @@ const mineDepartments = async (departmentIds) => {
 
   //TODO: STUUUUUUFFFF
   const { apps, matrix } = Formatter.generateMatrix(readyForMatrix);
-  generateCSVFromMatrixObject({ Apps: apps, matrix });
-  Miner.examplefunc({ matrix, appRoles: apps });
-
+  // const csv = generateCSVFromMatrixObject({ Apps: apps, matrix });
+  // fs.writeFileSync('matrix.csv', csv, 'utf8');
+  // fs.writeFileSync('matrix.json', JSON.stringify(matrix, null, 2), 'utf8');
+  // fs.writeFileSync('apps.json', JSON.stringify(apps, null, 2), 'utf8');
+  const { candidateRoles, optRoles, entitlementCount } = Miner.examplefunc({ matrix, appRoles });
 
   return {
     appRoles: appRoles,
-    // initRoles: initRoles,
-    // minedRoles: generatedRoles,
+    candRoles: candidateRoles,
+    optRoles: optRoles,
+    entitlementCount: entitlementCount,
   };
 };
 

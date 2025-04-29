@@ -17,8 +17,8 @@ const colHeaderWidth = 70;
 
 
 export default function createMatrices(miningComponents) {
-  const initRoles = miningComponents.initRoles;
-  const minedRoles = miningComponents.minedRoles;
+  const initRoles = miningComponents.candRoles;
+  const minedRoles = miningComponents.optRoles;
   const appRoles = miningComponents.appRoles;
 
   console.log("initRoles", initRoles);
@@ -60,12 +60,16 @@ const formatMatrix = ({ appRoles, roleMatrix, title }) => {
 
   for (const matrixRow of roleMatrix) {
     let rowId = "";
-    for (const user of matrixRow.users) {
-      rowId = rowId + user;
-    }
+    let rowCount = 0;
+      rowId = rowId + rowCount;
+      rowCount++;
     const row = { id: rowId };
     for (const appRoleId of Object.keys(appRoles)) {
-      row[appRoleId] = matrixRow.permissions[appRoleId] ?? 4; // default to 4 if not present
+      let prmId = appRoleId;
+      if (typeof prmId === 'string') {
+        prmId = Number(prmId);
+      }
+        row[appRoleId] = matrixRow.includes(prmId) ? appRoleId : 0; // 1 if present, 4 if not
     }
 
     rows.push(row);
