@@ -1,7 +1,8 @@
 import db from '../../models/db.js';
 import Formatter from './mineDepartmentRoles.js';
 import Fetch from './db-fetches.js';
-import Miner from './miningAlgs.js';
+// import Miner from './miningAlgs.js';
+import Miner from './fastMiner.js';
 
 const mineDepartments = async (departmentIds) => {
   // const miningComponents = await getMiningComponentsDepartment(departmentIds);
@@ -25,14 +26,26 @@ const mineDepartments = async (departmentIds) => {
 
   //TODO: STUUUUUUFFFF
   const { apps, matrix } = Formatter.generateMatrix(readyForMatrix);
-  const { initRoles, generatedRoles } = Miner.fastMiner({ apps, matrix });
+  generateCSVFromMatrixObject({ Apps: apps, matrix });
+  Miner.examplefunc({ matrix, appRoles: apps });
 
 
   return {
     appRoles: appRoles,
-    initRoles: initRoles,
-    minedRoles: generatedRoles,
+    // initRoles: initRoles,
+    // minedRoles: generatedRoles,
   };
+};
+
+const generateCSVFromMatrixObject = ({ Apps, matrix }) => {
+  const header = ['UserID', ...Apps].join(',');
+  const rows = [header];
+
+  for (const entry of matrix) {
+    const row = [entry.userId, ...entry.row].join(',');
+    rows.push(row);
+  }
+  return rows.join('\n');
 };
 
 async function testMiner(depIds) {

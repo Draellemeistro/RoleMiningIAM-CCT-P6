@@ -43,7 +43,9 @@ const fastMiner = ({ apps, matrix }) => {
   // Step 1: Identify InitRoles (users with identical permission sets)
   const roleMap = new Map(); // key: permission vector string, value: array of userIds
 
-  console.log('Apps:', apps);
+  console.log('\n\n');
+  console.log(JSON.stringify(matrix, null, 2));
+  console.log('\n\n');
 
   for (const { userId, row } of matrix) {
     const key = row.join('');
@@ -109,6 +111,9 @@ const anotherMiner = ({ apps, matrix }) => {
   // Step 1: Identify InitRoles (users with identical permission sets)
   const roleMap = new Map(); // key: permission vector string, value: array of userIds
 
+  console.log('\n\n');
+  console.log(JSON.stringify(matrix, null, 2));
+  console.log('\n\n');
   for (const { userId, row } of matrix) {
     const key = row.join('');
     if (!roleMap.has(key)) roleMap.set(key, []);
@@ -160,8 +165,6 @@ const anotherMiner = ({ apps, matrix }) => {
     users: Array.from(userSet)
   }));
 
-  console.log(JSON.stringify(initRoles, null, 2));
-  console.log(JSON.stringify(generatedRoles, null, 2));
 
   return {
     initRoles,
