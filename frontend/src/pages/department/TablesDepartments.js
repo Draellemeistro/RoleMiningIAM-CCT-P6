@@ -1,8 +1,7 @@
 import * as React from 'react';
 
 import { DataGrid } from '@mui/x-data-grid';
-import { Box, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
-import { useEffect, useState } from 'react';
+import { Box } from '@mui/material';
 
 const rogueText = "*"; // smæk på rogue app roles
 const fNameWidth = 120;
@@ -91,6 +90,29 @@ export default function DepartmentDataGridRows({ departmentDataArr }) {
 function formatDangerApps(tables, dangerApps = []) {
   return (
     <>
+      {/* 🧭 Legend Banner at the top */}
+      <Box
+        sx={{
+          backgroundColor: '#e6f7ff',
+          color: '#004085',
+          border: '1px solid #b8daff',
+          borderRadius: '4px',
+          padding: '12px',
+          marginBottom: '24px',
+          fontSize: '14px',
+          fontWeight: 500,
+        }}
+      >
+        <div style={{ marginBottom: '8px' }}>
+          <strong>Legend:</strong> This table highlights permission types and unusual patterns:
+        </div>
+        <ul style={{ paddingLeft: '20px', marginBottom: 0 }}>
+          <li><span style={{ backgroundColor: 'rgba(255, 0, 0, 0.4)', padding: '2px 4px' }}>Red</span> = Admin access</li>
+          <li><span style={{ backgroundColor: 'rgba(255, 255, 0, 0.4)', padding: '2px 4px' }}>Yellow</span> = Write access</li>
+          <li><span style={{ backgroundColor: 'rgba(0, 255, 0, 0.4)', padding: '2px 4px' }}>Green</span> = Read access</li>
+          <li><span style={{ border: '2px dashed purple', padding: '2px 4px', fontStyle: 'italic' }}>Dashed purple cell</span> = Rogue app role (unexpected or direct assignment)</li>
+        </ul>
+      </Box>
       {tables.map((table, idx) => {
         const dangerForTable = dangerApps.filter(app => app.department === table.title);
 
@@ -114,7 +136,7 @@ function formatDangerApps(tables, dangerApps = []) {
                   fontWeight: 500,
                 }}
               >
-                ⚠️ Rare Permissions in this Department:
+                CAUTION: Rare Permissions in this Department:
                 <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
                   {dangerForTable.map((entry, i) => (
                     <li key={i}>
@@ -314,8 +336,8 @@ function getCellStyleClassUserRows(cellData) {
 function generateMinerTable(departmentData) {
   const appRoles = departmentData.appRoles;
   const roleMatrix = departmentData.optRoles;
-  const entitlementCount = departmentData.entitlementCount;
-  const title = "Mined Roles";
+  // const entitlementCount = departmentData.entitlementCount;
+  const title = "Suggested Roles from Mining";
   const columns = [];
   const rows = [];
   const appRoleCols = [];
