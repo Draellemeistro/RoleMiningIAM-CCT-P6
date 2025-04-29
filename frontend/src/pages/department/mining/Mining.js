@@ -46,6 +46,16 @@ const Mining = () => {
     }
   }, [matrixData]);
 
+  const handleOther = (matrixData) => {
+    if (matrixData) {
+      console.log("Matrix Data:", matrixData);
+      const matrsixUI = Matrixify(matrixData); // createMatrices
+      return matrsixUI;
+    }
+
+
+  }
+
   const handleAnalyze = () => {
     if (matrixData) {
       console.log("Analyzing matrixData: ", matrixData);
@@ -126,10 +136,19 @@ const Mining = () => {
           Analyze
         </Button>
 
-        {/* Render matrix UI when triggered */}
-        {matrixUI}
-
       </Box>
+        {/* Render matrix UI when triggered */}
+        {matrixData && (
+          <Box sx={{ marginTop: 4, }}>
+            <h2>Aaaaaapp Roles</h2>
+            {handleOther(matrixData)}
+          </Box>
+        )}
+
+        <Box sx={{ marginTop: 4, }}>
+          {matrixUI}
+        </Box>
+
     </Box>
   );
 };
