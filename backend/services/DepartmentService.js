@@ -213,8 +213,8 @@ const mineDepartments = async (departmentNames, departmentIds) => {
   }
 
   const returnedData = [];
-  returnedData.push(miningRes);
   returnedData.push(...departmentOverviews);
+  returnedData.push(miningRes);
 
   return returnedData;
 };
