@@ -8,7 +8,7 @@ import userRoutes from './routes/userRoutes.js';
 import roleRoutes from './routes/roleRoutes.js';
 import departmentRoutes from './routes/departmentRoutes.js';
 
-import analysisRoutes from './routes/analysisRoutes.js';
+import miningRoutes from './routes/miningRoutes.js';
 
 dotenv.config();
 
@@ -23,7 +23,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/departments', departmentRoutes);
 
-app.use('/api/analysis', analysisRoutes);
+app.use('/api/mining', miningRoutes);
 
 
 // Serve frontend (adjust path for ESM)

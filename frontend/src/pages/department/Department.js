@@ -6,14 +6,20 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import DepartmentDataGrid from "./TablesDepartments";
 import { Modal, Typography } from "@mui/material";
+import { useNavigate } from 'react-router-dom';
 
 const Department = () => {
   const [departments, setDepartments] = useState([]);
+  const [warningModal, setWarnignModal] = useState(false);
+  const [displayInfo, setDisplayInfo] = useState(false);
   const [selectedDepartments, setSelectedDepartments] = useState([]);
-  const [analysisResult, setAnalysisResult] = useState(null);
+  const [overviewResult, setOverviewResult] = useState(null);
   const [showRawJson, setShowRawJson] = useState(false);
+  const handleClose = () => setWarnignModal(false);
+  const handleOpen = () => setWarnignModal(true);
   const handleOpenModal = () => setShowRawJson(true);
   const handleCloseModal = () => setShowRawJson(false);
+  const navigate = useNavigate();
 
   // Fetch functional roles on load
   useEffect(() => {
@@ -28,14 +34,26 @@ const Department = () => {
     fetchDepartments();
   }, []);
 
-  const handleAnalyze = async () => {
+  const handleMining = async () => {
+    try {
+      const res = await axios.post(
+        `${config.apiBaseUrl}/departments/mine`,
+        { departmentList: selectedDepartments }
+      );
+      setOverviewResult(res.data);
+    } catch (err) {
+      console.error("Error during mining-analysis:", err);
+    }
+  };
+
+  const handleOverview = async () => {
     try {
       const res = await axios.post(
         `${config.apiBaseUrl}/departments/analyze-specifics`,
         { departmentList: selectedDepartments }
       );
 
-      setAnalysisResult(res.data);
+      setOverviewResult(res.data);
     } catch (err) {
       console.error("Error during analysis:", err);
     }
@@ -75,19 +93,33 @@ const Department = () => {
 
         <Button
           variant="contained"
-          onClick={handleAnalyze}
+          onClick={handleOverview}
           disabled={selectedDepartments.length === 0}
         >
-          Analyze
+          Show Overview
+        </Button>
+
+        <Button
+          variant="contained"
+          size="large"
+          sx={{
+            fontSize: '1.2rem',
+            padding: '12px 24px',
+            width: '250px', // Fixed width for all buttons
+            textAlign: 'center' // Ensures text is centered
+          }}
+          onClick={handleMining}
+        >
+          Mine Roles
         </Button>
       </Box>
 
       {/* Result section */}
-      {analysisResult && (
+      {overviewResult && (
         <Box sx={{ marginTop: 4, }}>
-          {/*<DepartmentDataTable departmentDataArr={analysisResult} />
+          {/*<DepartmentDataTable departmentDataArr={overviewResult} />
 */}
-          <DepartmentDataGrid departmentDataArr={analysisResult} />
+          <DepartmentDataGrid departmentDataArr={overviewResult} />
           {/* Modal for raw JSON */}
           <Box sx={{ textAlign: "center", mt: 2 }}>
             <Button variant="outlined" onClick={handleOpenModal}>
@@ -118,10 +150,10 @@ const Department = () => {
               }}
             >
               <Typography id="json-modal-title" variant="h6" component="h2" gutterBottom>
-                Analysis Result (Raw JSON)
+                Overview Result (Raw JSON)
               </Typography>
               <pre style={{ textAlign: "left", whiteSpace: "pre-wrap", wordBreak: "break-word" }}>
-                {JSON.stringify(analysisResult, null, 2)}
+                {JSON.stringify(overviewResult, null, 2)}
               </pre>
               <Box sx={{ textAlign: "right", mt: 2 }}>
                 <Button onClick={handleCloseModal} variant="contained">

@@ -1,7 +1,7 @@
 import db from '../../models/db.js';
 import fs from 'fs';
 import Fetch from './db-fetches.js';
-import Miner from './miningAlgs.js';
+import Miner from './miningAlgorithms.js';
 /* . The user-permission assignment relation that specifies which individuals had access to which resources in the original system can be
 represented in the form of a Boolean matrix UPA.
 the rows and columns of the matrix correspond to users and permissions, respectively.
@@ -18,7 +18,7 @@ sometimes contain a role-role relationship constituting a role hierarchy.
 
 function groupAppRolesByUser(uApps, uFAPs) {
   const tempMap = new Map();
-  const userPerms = new Map();
+
   // Step 1: Collect all appRoleIds per user in a Set
   function addRole(userId, appRoleId) {
     if (!tempMap.has(userId)) {
@@ -121,7 +121,6 @@ const generateCSVFromMatrixObject = ({ Apps, matrix }) => {
 
 const generateMatrix = (userPermsMapping) => {
   const uniqueAppRoles = new Set();
-  // fs.writeFileSync('userPermsMapping.json', JSON.stringify(userPermsMapping, null, 2), 'utf8');
   for (const roles of Object.values(userPermsMapping)) {
     roles.forEach((role) => uniqueAppRoles.add(role));
   }
@@ -130,12 +129,12 @@ const generateMatrix = (userPermsMapping) => {
   const matrix = [];
   for (const [userId, roles] of Object.entries(userPermsMapping)) {
     const roleSet = new Set(roles);
-    const row = sortedAppRoles.map((role) => (roleSet.has(role) ? role : 0));
+    const row = sortedAppRoles.map((role) => (roleSet.has(role) ? 1 : 0));
     matrix.push({ userId, row });
   }
 
   return {
-    apps: sortedAppRoles,
+    Apps: sortedAppRoles,
     matrix
   }
 };
@@ -203,6 +202,4 @@ export default {
   getMiningComponents,
   getMiningComponentsDepartment,
   makeMatrixUPA,
-  groupAppRolesByUser,
-  generateMatrix,
 };
