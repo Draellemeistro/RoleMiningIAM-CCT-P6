@@ -10,9 +10,13 @@ import { useNavigate } from 'react-router-dom';
 
 const Department = () => {
   const [departments, setDepartments] = useState([]);
+  const [warningModal, setWarnignModal] = useState(false);
+  const [displayInfo, setDisplayInfo] = useState(false);
   const [selectedDepartments, setSelectedDepartments] = useState([]);
   const [overviewResult, setOverviewResult] = useState(null);
   const [showRawJson, setShowRawJson] = useState(false);
+  const handleClose = () => setWarnignModal(false);
+  const handleOpen = () => setWarnignModal(true);
   const handleOpenModal = () => setShowRawJson(true);
   const handleCloseModal = () => setShowRawJson(false);
   const navigate = useNavigate();

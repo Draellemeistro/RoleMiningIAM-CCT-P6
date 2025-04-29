@@ -1,6 +1,7 @@
 import * as React from 'react';
-import Box from '@mui/material/Box';
 import { DataGrid } from '@mui/x-data-grid';
+import { Box, Dialog, DialogTitle, DialogContent, DialogActions, Button } from '@mui/material';
+import { useEffect, useState } from 'react';
 
 const rogueText = "*"; // smæk på rogue app roles
 const fNameWidth = 120;
@@ -47,8 +48,108 @@ export default function DepartmentDataGridRows({ departmentDataArr }) {
     tables.push(generateTableUserRows(departmentData));
   });
 
-  return FormatTablesForPageUserRows(tables);
+  const dangerApps = [];
+  const dangerThreshold = 1;
+
+
+  for (const table of tables) {
+    table.columns.forEach((col) => {
+      let appearances = 0;
+
+      table.rows.forEach((row) => {
+        const value = (row[col.field] || '').toString().toLowerCase();
+
+        if (['read', 'write', 'admin'].includes(value)) {
+          appearances++;
+          console.log(`Found ${value} in ${col.field} for user ${row.fullName}`);
+        }
+      });
+
+      console.log('appearances', appearances);
+      if (appearances <= dangerThreshold && appearances > 0) {
+        dangerApps.push({
+          appName: col.field,
+          count: appearances,
+          department: table.title,
+        });
+      }
+    });
+  }
+
+  if (dangerApps.length > 0) {
+    console.log('Danger apps:', dangerApps);
+    return formatDangerApps(tables, dangerApps);
+  } else {
+    console.log('No danger apps found');
+    return FormatTablesForPageUserRows(tables);
+  }
+
 };
+
+
+function formatDangerApps(tables, dangerApps = []) {
+  return (
+    <>
+      {tables.map((table, idx) => {
+        const dangerForTable = dangerApps.filter(app => app.department === table.title);
+
+        return (
+          <Box key={idx} sx={{ mb: 5 }}>
+            <div style={{ marginBottom: '8px', fontWeight: 'bold', textAlign: 'center', fontSize: '20px' }}>
+              {table.title || `Department ${idx + 1}`}
+            </div>
+
+            {/* 🚨 Banner for rare permissions */}
+            {dangerForTable.length > 0 && (
+              <Box
+                sx={{
+                  backgroundColor: '#fff3cd',
+                  color: '#856404',
+                  border: '1px solid #ffeeba',
+                  borderRadius: '4px',
+                  padding: '12px',
+                  marginBottom: '16px',
+                  fontSize: '14px',
+                  fontWeight: 500,
+                }}
+              >
+                ⚠️ Rare Permissions in this Department:
+                <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
+                  {dangerForTable.map((entry, i) => (
+                    <li key={i}>
+                      <strong>{entry.appName}</strong> — only {entry.count} user{entry.count !== 1 && 's'}
+                    </li>
+                  ))}
+                </ul>
+              </Box>
+            )}
+
+            <Box sx={{ height: 900, width: '100%' }}>
+              <DataGrid
+                rows={table.rows}
+                columns={table.columns}
+                columnHeaderHeight={130}
+                getCellClassName={getCellStyleClassUserRows}
+                showCellVerticalBorder
+                showColumnVerticalBorder
+                pageSizeOptions={[5, 10, 20, { value: -1, label: 'All' }]}
+                initialState={{
+                  pagination: {
+                    paginationModel: { pageSize: -1 },
+                  },
+                }}
+                checkboxSelection
+                disableRowSelectionOnClick
+              />
+            </Box>
+          </Box>
+        );
+      })}
+      <style>{generatedRowStyles}</style>
+    </>
+  );
+}
+
 
 // TODO: Make user clickable to open a modal with more information about the user (or send to another page)
 // TODO: Make the table sortable by column
@@ -278,235 +379,4 @@ const getPermLevel = (appRoles, permId) => {
   const match = appName.match(/\((\w+)\saccess\)/);
   return match ? match[1] : null;
 }
-
-
-// const infoWidth = 250;
-//
-// // Til at style celler, så teksten er centreret (det er skrald)
-// const centerTextStyle = `
-//   .MuiDataGrid-cell {
-//     display: flex;
-//     align-items: center;
-//     justify-content: center;
-//     text-align: center;
-//   }
-// `;
-//
-// const generatedColStyles = Object.entries(colorCodings)
-//   .map(([key, color]) => {
-//     return `.MuiDataGrid-cell.priv-${key} { background-color: ${color} !important; }`;
-//   }).join('\n') + '\n' + rogueStyle + '\n' + overrideStyles + '\n' + centerTextStyle;
-//
-// function generateTableUserCols(departmentData) {
-//   if (!departmentData || !departmentData.departmentUsers) {
-//     try {
-//       console.error('Invalid department data:', departmentData.departmentUsers);
-//     } catch (error) {
-//       console.error('Error logging invalid department data:', error);
-//     } finally {
-//       return { rows: [], columns: [], title: departmentData?.departmentName || 'N/A' };
-//     }
-//   }
-//
-//   const funcAppRoleMap = new Map(); // Map to store the functional and app roles
-//   const rogueAppRoleMap = new Map(); // Map to store the rogue app roles
-//   const { departmentName, departmentUsers } = departmentData;
-//   const cols = [
-//     { field: 'info', headerName: 'App Roles', width: infoWidth }
-//   ];
-//   const colGroupingModel = [
-//     {
-//       groupId: 'info',
-//       headerName: 'Info',
-//       children: [{ field: 'info' }],
-//     }
-//   ];
-//
-//   const gridRows = [];
-//   const appRoleRows = []; // Array to hold app role rows
-//   let fieldCounter = 1;
-//   const fieldKeys = [];
-//
-//   departmentUsers.forEach((user) => {
-//     const colGrpChildren = [];
-//     const fieldKey = `col-${fieldCounter}`; // field names must be strings
-//     fieldKeys.push(fieldKey); // Store the field key for later use
-//
-//     let funcCounter = 0;
-//     const funcRoleNames = [];
-//
-//     user.funcRoles.forEach((funcRole) => {
-//       const funcKey = `${fieldKey}-${funcCounter}`; // field names must be strings
-//       fieldKeys.push(funcKey); // Store the field key for later use
-//       funcRoleNames.push(funcRole.name);
-//
-//       colGrpChildren.push({ field: funcKey });
-//       // cols.push({ field: funcKey, headerName: funcRole.name || 'N/A', width: funcRoleWidth });
-//       cols.push({
-//         field: funcKey,
-//         headerName: funcRole.name || 'N/A',
-//         width: funcRoleWidth,
-//         renderHeader: ({ colDef }) => (
-//           <div
-//             style={{
-//               transform: 'rotate(90deg)',
-//               transformOrigin: 'center', // Centers the text rotation
-//               whiteSpace: 'nowrap', // Prevents text from wrapping
-//               display: 'flex', // Flexbox to center the text
-//               alignItems: 'center', // Vertically center
-//               justifyContent: 'center', // Horizontally center
-//               height: '120px', // Adjust height as needed
-//               width: '40px', // Adjust width as needed
-//             }}>
-//             {colDef.headerName}
-//           </div>
-//         ),
-//       });
-//
-//       if (!funcAppRoleMap.has(funcRole.name)) {
-//         funcAppRoleMap.set(funcRole.name, funcRole.appRoles);
-//       }
-//
-//       for (const appRole of funcRole.appRoles) {
-//         if (!appRoleRows.some(row => row.id === appRole.name)) {
-//           appRoleRows.push({ id: appRole.name, info: appRole.name });
-//         }
-//
-//         const appRow = appRoleRows.find(row => row.id === appRole.name);
-//         if (appRow) {
-//           appRow[funcKey] = appRole.PrivLevel || 'N/A';
-//         }
-//       }
-//       funcCounter++;
-//     });
-//
-//     if (user.rogueAppRoles?.length > 0) {
-//       const rogueKey = `${fieldKey}-rogue`; // field names must be strings
-//       fieldKeys.push(rogueKey); // Store the field key for later use
-//       colGrpChildren.push({ field: rogueKey });
-//       // cols.push({ field: rogueKey, headerName: "Rogue App Roles" || 'N/A', width: funcRoleWidth });
-//       cols.push({
-//         field: rogueKey,
-//         headerName: "Rogue App Roles" || 'N/A',
-//         width: funcRoleWidth,
-//         renderHeader: ({ colDef }) => (
-//           <div
-//             style={{
-//               transform: 'rotate(90deg)',
-//               transformOrigin: 'center', // Centers the text rotation
-//               whiteSpace: 'nowrap', // Prevents text from wrapping
-//               display: 'flex', // Flexbox to center the text
-//               alignItems: 'center', // Vertically center
-//               justifyContent: 'center', // Horizontally center
-//               height: '120px', // Adjust height as needed
-//               width: '40px', // Adjust width as needed
-//             }}>
-//             {colDef.headerName}
-//           </div>
-//         ),
-//       });
-//
-//       rogueAppRoleMap.set(user.fullName, user.rogueAppRoles);
-//       user.rogueAppRoles.forEach((rogueAppRole) => {
-//         if (!appRoleRows.some(row => row.id === rogueAppRole.name)) {
-//           appRoleRows.push({ id: rogueAppRole.name, info: rogueAppRole.name });
-//         }
-//         const rogueRow = appRoleRows.find(row => row.id === rogueAppRole.name);
-//         if (rogueRow) {
-//           rogueRow[rogueKey] = rogueAppRole.PrivLevel || 'N/A';
-//         }
-//       });
-//     }
-//
-//     const colGrouping = {
-//       groupId: `${fieldCounter}`,
-//       headerName: user.fullName || 'N/A',
-//       children: colGrpChildren,
-//     };
-//     colGroupingModel.push(colGrouping); // Add the grouping model for this user
-//     fieldCounter++;
-//   });
-//
-//   // filter(Boolean) til at fjerne null eller tomme felter (just in case)
-//   fieldKeys.forEach((fieldKey) => {
-//     appRoleRows.forEach((row) => {
-//       row.info = row.info.replace(/\s*\([^)]*\)/g, '').trim() || 'N/A';
-//       if (!row[fieldKey]) {
-//         row[fieldKey] = ' ';
-//       }
-//     });
-//   });
-//
-//
-//   colGroupingModel.forEach((group, i) => {
-//     if (!group.field && !group.groupId) {
-//       console.error(`Invalid group at index ${i}: missing field and groupId`, group);
-//     }
-//     if (group.children) {
-//       group.children.forEach((child, j) => {
-//         if (!child.field && !child.groupId) {
-//           console.error(`Invalid child at [${i}][${j}]: missing field and groupId`, child);
-//         }
-//       });
-//     }
-//   });
-//   // Push the rows after ensuring each one has an id
-//   gridRows.push(...appRoleRows);
-//   return ({
-//     rows: gridRows,
-//     columns: cols,
-//     title: departmentName,
-//     colGrpMdl: colGroupingModel,
-//   });
-// }
-//
-// function FormatTablesForPageUserCols(tables) {
-//   return (
-//     <>
-//       {tables.map((table, idx) => (
-//         <Box key={idx} sx={{ mb: 5 }}>
-//           <div style={{ marginBottom: '8px', fontWeight: 'bold', textAlign: 'center', fontSize: '20px' }}>
-//             {table.title || `Department ${idx + 1}`}
-//           </div>
-//           <Box sx={{ height: 900, width: '100%' }}>
-//             <DataGrid
-//               rows={table.rows}
-//               columns={table.columns}
-//               columnHeaderHeight={60}
-//               columnGroupingModel={table.colGrpMdl}
-//               getCellClassName={getCellStyleClassUserCols}
-//               showCellVerticalBorder
-//               showColumnVerticalBorder
-//               pageSizeOptions={[5, 10, 20, { value: -1, label: 'All' }]}
-//               initialState={{
-//                 pagination: {
-//                   paginationModel: { pageSize: -1 },
-//                 },
-//               }}
-//               // checkboxSelection // Den driller åbenbart...
-//               disableRowSelectionOnClick
-//             />
-//           </Box>
-//         </Box>
-//       ))}
-//       <style>{generatedColStyles}</style>
-//     </>
-//   )
-// }
-//
-// function getCellStyleClassUserCols({ value, field }) {
-//   if (['fullName', 'funcRoles', 'info'].includes(field)) return '';
-//   if (!value || typeof value !== 'string') return '';
-//
-//   const lower = value.toLowerCase().trim();
-//   const isRogue = field.endsWith('-rogue');
-//
-//   // No known privilege level? Don't style dat s
-//   const match = Object.keys(colorCodings).find(key => lower.includes(key));
-//   if (!match) return '';
-//
-//   const baseClass = `priv-${match}`;
-//   return isRogue ? `${baseClass} rogue-cell` : baseClass;
-// }
-
 
