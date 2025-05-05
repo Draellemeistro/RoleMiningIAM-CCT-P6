@@ -3,62 +3,6 @@ import Miner from './roleMining/fastMiner.js';
 import Formatter from './roleMining/mineDepartmentRoles.js';
 import Fetch from './roleMining/db-fetches.js';
 
-function groupByUserWithFuncRoles(rows, assignedAppRolesByUser) {
-  const userMap = new Map();
-
-  for (const row of rows) {
-    if (!userMap.has(row.UserId)) {
-      userMap.set(row.UserId, {
-        DepartmentId: row.DepartmentId,
-        UserId: row.UserId,
-        FullName: row.FullName,
-        FunctionalRole: [],
-        rogueAppRoles: [] // ← added
-      });
-    }
-
-    const user = userMap.get(row.UserId);
-
-    // Add functional role if not yet added
-    let funcRole = user.FunctionalRole.find(fr => fr.name === row.FunctionalRole);
-    if (!funcRole) {
-      funcRole = {
-        name: row.FunctionalRole,
-        appRoles: []
-      };
-      user.FunctionalRole.push(funcRole);
-    }
-
-    // Add app role to the functional role
-    funcRole.appRoles.push({
-      name: row.AppRoleName,
-      PrivLevel: row.PrivilegeLevel
-    });
-  }
-
-  // Identify rogue(singleton) app roles per user
-  for (const [userId, userData] of userMap.entries()) {
-    const assigned = assignedAppRolesByUser[userId] || [];
-
-    // Build set of expected AppRoleNames from all func roles
-    const expectedAppRoleNames = new Set(
-      userData.FunctionalRole.flatMap(fr =>
-        fr.appRoles.map(ar => ar.name)
-      )
-    );
-
-    // Compare: what's in assigned but not in expected
-    const rogue = assigned.filter(ar => !expectedAppRoleNames.has(ar.AppRoleName));
-
-    userData.rogueAppRoles = rogue.map(ar => ({
-      name: ar.AppRoleName,
-      PrivLevel: ar.PrivilegeLevel
-    }));
-  }
-
-  return Array.from(userMap.values());
-}
-
 const fetchDepartments = async () => {
   const [rows] = await db.query('SELECT DepartmentId, DepartmentName FROM Departments');
   return rows;
@@ -190,7 +134,6 @@ const mineDepartments = async (departmentNames, departmentIds) => {
   const usersFuncApps = await Fetch.fetchDepUserFuncApps(userIds);
   const usersAppRoles = await Fetch.fetchDepUserPRMSHist(userIds);
 
-  // TODO:
   const readyForMatrix = Formatter.groupAppRolesByUser(usersAppRoles, usersFuncApps);
   const allAppIds = [];
   for (const userId in readyForMatrix) {

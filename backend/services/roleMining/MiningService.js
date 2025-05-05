@@ -1,9 +1,9 @@
-import db from '../../models/db.js';
+import db from '../models/db.js';
 import fs from 'fs';
-import Formatter from './mineDepartmentRoles.js';
-import Fetch from './db-fetches.js';
-// import Miner from './miningAlgs.js';
-import Miner from './fastMiner.js';
+import Formatter from './rolemining/mineDepartmentRoles.js';
+import Fetch from './rolemining/db-fetches.js';
+// import Miner from './rolemining/miningAlgs.js';
+import Miner from './rolemining/fastMiner.js';
 
 const mineDepartments = async (departmentIds) => {
   // const miningComponents = await getMiningComponentsDepartment(departmentIds);
