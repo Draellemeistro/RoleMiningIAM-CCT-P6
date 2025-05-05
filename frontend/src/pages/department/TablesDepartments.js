@@ -55,17 +55,13 @@ export default function DepartmentDataGridRows({ departmentDataArr }) {
   for (const table of tables) {
     table.columns.forEach((col) => {
       let appearances = 0;
-
       table.rows.forEach((row) => {
         const value = (row[col.field] || '').toString().toLowerCase();
-
         if (['read', 'write', 'admin'].includes(value)) {
           appearances++;
-          console.log(`Found ${value} in ${col.field} for user ${row.fullName}`);
         }
       });
 
-      console.log('appearances', appearances);
       if (appearances <= dangerThreshold && appearances > 0) {
         dangerApps.push({
           appName: col.field,
@@ -77,20 +73,17 @@ export default function DepartmentDataGridRows({ departmentDataArr }) {
   }
 
   if (dangerApps.length > 0) {
-    console.log('Danger apps:', dangerApps);
     return formatDangerApps(tables, dangerApps);
   } else {
-    console.log('No danger apps found');
     return FormatTablesForPageUserRows(tables);
   }
-
 };
 
 
 function formatDangerApps(tables, dangerApps = []) {
   return (
     <>
-      {/* 🧭 Legend Banner at the top */}
+      {/* Legend Banner at the top */}
       <Box
         sx={{
           backgroundColor: '#e6f7ff',
@@ -122,7 +115,7 @@ function formatDangerApps(tables, dangerApps = []) {
               {table.title || `Department ${idx + 1}`}
             </div>
 
-            {/* 🚨 Banner for rare permissions */}
+            {/* Banner for rare/rogue permissions */}
             {dangerForTable.length > 0 && (
               <Box
                 sx={{
@@ -199,7 +192,6 @@ function generateTableUserRows(departmentData) {
       id: rowId,// Required for DataGrid, can be any unique string
       fullName: user.fullName || 'N/A',
     };
-
     const funcRoleString = user.funcRoles.map((funcRole) => funcRole.name).join(', ') || 'N/A';
     row['funcRoles'] = funcRoleString || 'N/A';
 
@@ -263,7 +255,6 @@ function generateTableUserRows(departmentData) {
           ),
         });
       }
-
       row[rogueAppRole.name.replace(/\s*\([^)]*\)/g, '').trim()] = rogueAppRole.PrivLevel + rogueText || 'N/A';
     });
     rows.push(row);
@@ -336,7 +327,6 @@ function getCellStyleClassUserRows(cellData) {
 function generateMinerTable(departmentData) {
   const appRoles = departmentData.appRoles;
   const roleMatrix = departmentData.optRoles;
-  // const entitlementCount = departmentData.entitlementCount;
   const title = "Suggested Roles from Mining";
   const columns = [];
   const rows = [];
@@ -369,14 +359,11 @@ function generateMinerTable(departmentData) {
     }
   });
 
-  // { field: appRole.AppRoleName, headerName: appRole.AppRoleName, width: 150 };
-
   let rowCounter = 0;
   for (const matrixRow of roleMatrix) {
     const rowId = `role-${rowCounter}`; // field names must be strings
     const row = { id: rowId || 'N/A' };
     rowCounter++;
-    console.log('matrixRow', matrixRow);
     for (const matrixCell of matrixRow) {
       const prmId = matrixCell;
       if (prmId !== 0 && prmId !== null && prmId !== undefined) {

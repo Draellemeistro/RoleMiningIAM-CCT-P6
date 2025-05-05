@@ -1,6 +1,5 @@
 import Navbar from "../components/Navbar";
 import config from "../../config";
-// import { drawerHeight } from "../components/Navbar";
 import { Box, Autocomplete, TextField, Button } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
