@@ -13,7 +13,6 @@ const getDepartments = async (req, res) => {
 
 const getDepartmentOverview = async (req, res) => {
   const { departmentList } = req.body;
-  console.log("Received departmentList:", departmentList);
 
   // check if departmentList is a list/array and not empty
   if (!Array.isArray(departmentList) || departmentList.length === 0) {
@@ -56,7 +55,6 @@ const getAllDepartmentOverviews = async (req, res) => {
 
 const mineDepartments = async (req, res) => {
   const { departmentList } = req.body;
-  console.log("Received departmentList:", departmentList);
 
   // check if departmentList is a list/array and not empty
   if (!Array.isArray(departmentList) || departmentList.length === 0) {

@@ -1,7 +1,6 @@
 import db from '../../models/db.js';
 import fs from 'fs';
 import Fetch from './db-fetches.js';
-import Miner from './miningAlgs.js';
 /* . The user-permission assignment relation that specifies which individuals had access to which resources in the original system can be
 represented in the form of a Boolean matrix UPA.
 the rows and columns of the matrix correspond to users and permissions, respectively.
@@ -18,7 +17,7 @@ sometimes contain a role-role relationship constituting a role hierarchy.
 
 function groupAppRolesByUser(uApps, uFAPs) {
   const tempMap = new Map();
-  const userPerms = new Map();
+
   // Step 1: Collect all appRoleIds per user in a Set
   function addRole(userId, appRoleId) {
     if (!tempMap.has(userId)) {
@@ -99,29 +98,12 @@ const makeMatrixUPA = async (departmentIds) => {
 
   const readyForMatrix = groupAppRolesByUser(usersAppRoles, usersFuncApps);
   const matrix = generateMatrix(readyForMatrix);
-  const minedRoles = mineAndCompare(matrix);
-  // const { initRoles, generatedRoles } = fastMiner(matrix);
-  // const csv = generateCSVFromMatrixObject(matrix);
-  // fs.writeFileSync('matrix.csv', csv, 'utf8');
 
   return matrix;
 };
 
-const generateCSVFromMatrixObject = ({ Apps, matrix }) => {
-  const header = ['UserID', ...Apps].join(',');
-  const rows = [header];
-
-  for (const entry of matrix) {
-    const row = [entry.userId, ...entry.row].join(',');
-    rows.push(row);
-  }
-  return rows.join('\n');
-};
-
-
 const generateMatrix = (userPermsMapping) => {
   const uniqueAppRoles = new Set();
-  // fs.writeFileSync('userPermsMapping.json', JSON.stringify(userPermsMapping, null, 2), 'utf8');
   for (const roles of Object.values(userPermsMapping)) {
     roles.forEach((role) => uniqueAppRoles.add(role));
   }
@@ -140,15 +122,6 @@ const generateMatrix = (userPermsMapping) => {
   }
 };
 
-const mineAndCompare = ({ Apps, matrix }) => {
-  const minedRoles = Miner.fastMiner({ Apps, matrix });
-  // const minedRoles = anotherMiner({ Apps, matrix });
-
-  console.log(JSON.stringify(minedRoles, null, 2));
-  console.log("Mined Roles:", minedRoles);
-
-  return minedRoles;
-}
 
 async function getMiningComponentsDepartment(departmentIds) {
   const users = await Fetch.fetchDepUsers({ depIds: departmentIds });

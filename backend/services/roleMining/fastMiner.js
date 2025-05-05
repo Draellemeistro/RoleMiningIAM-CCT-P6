@@ -3,12 +3,10 @@
 function fastMinerFromMatrix(components) {
   // Build user-permission array
   const UP = components.matrix.map(x => x.row);
-  const appRoles = components.appRoles;
 
   // Remove duplicate rows and all-zero rows
   const uniqueUP = Array.from(new Set(UP.map(x => JSON.stringify(x)))).map(x => JSON.parse(x));
   const cleanedUP = uniqueUP.filter(x => x.some(p => p !== 0));
-  console.log('cleanedUP', cleanedUP);
 
   const InitRoles = [];
   const OrigCount = [];
@@ -16,9 +14,7 @@ function fastMinerFromMatrix(components) {
   const GenCount = [];
   const Contributors = [];
 
-  let loopCount = 0;
   for (const user of cleanedUP) {
-    // console.log('user', user);
     const existsIndex = InitRoles.findIndex(r => arraysEqual(r, user));
     if (existsIndex === -1) {
       InitRoles.push(user);
@@ -32,8 +28,6 @@ function fastMinerFromMatrix(components) {
 
   for (const InitRole of InitRolesIter) {
     for (const CandRole of InitRolesIter) {
-      // console.log('CandRole', CandRole);
-      // console.log('newRole', CandRole.map((val, idx) => (val && InitRole[idx]) ? 1 : 0));
       const NewRole = CandRole.map((val, idx) => (val && InitRole[idx]) ? val : 0);
 
       if (!GenRoles.some(role => arraysEqual(role, NewRole))) {
@@ -62,10 +56,6 @@ function basicRMP(UPMatrix, CandRolesMatrix, MaxRoles = 100) {
   const EntitlementCount = [];
   let iters = 0;
   let UP_Remain = UP.map(row => [...row]);
-
-  // console.log('\nUPMatrix', UPMatrix);
-  // console.log('\nCandRolesMatrix', CandRolesMatrix);
-
 
   // Fix constraints assignment
   for (let i = 0; i < CandRolesMatrix.length; i++) {
@@ -152,7 +142,6 @@ const examplefunc = (components) => {
   const candidateRoles = fastMinerFromMatrix(components);
 
   const matrix = components.matrix.map(x => x.row);
-  const appRoles = components.appRoles;
 
   const { optRoles, entitlementCount } = basicRMP(matrix, candidateRoles);
 

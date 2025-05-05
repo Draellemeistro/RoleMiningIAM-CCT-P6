@@ -122,7 +122,6 @@ const getDepartmentOverview = async (departmentNames, departmentIds) => {
   // Build structured result
   const departmentData = mapDetailstoDepartment(rows, assignedAppRolesByUser);
 
-  console.log("Department data list:", departmentData[0]);
   return departmentData;
 };
 
