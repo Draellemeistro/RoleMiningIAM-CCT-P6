@@ -1,14 +1,13 @@
 import Formatter from './roleMining/mineDepartmentRoles.js';
-import Fetch from './roleMining/db-fetches.js';
 import Miner from './roleMining/fastMiner.js';
 
 const mineDepartments = async (departmentIds) => {
-  const users = await Fetch.fetchDepUsers({ depIds: departmentIds });
+  const users = await Formatter.fetchDepUsers({ depIds: departmentIds });
   const userIds = users.map((user) => user.userId);
 
 
-  const usersFuncApps = await Fetch.fetchDepUserFuncApps(userIds);
-  const usersAppRoles = await Fetch.fetchDepUserPRMSHist(userIds);
+  const usersFuncApps = await Formatter.fetchDepUserFuncApps(userIds);
+  const usersAppRoles = await Formatter.fetchDepUserPRMSHist(userIds);
 
   const readyForMatrix = Formatter.groupAppRolesByUser(usersAppRoles, usersFuncApps);
   const allAppIds = [];
@@ -16,7 +15,7 @@ const mineDepartments = async (departmentIds) => {
     allAppIds.push(...readyForMatrix[userId]);
   }
 
-  const appList = await Fetch.fetchDepPRMS(allAppIds);
+  const appList = await Formatter.fetchDepPRMS(allAppIds);
   const appRoles = appList.reduce((acc, { appRoleId, appRoleName }) => {
     acc[appRoleId] = appRoleName;
     return acc;

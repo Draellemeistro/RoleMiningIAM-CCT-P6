@@ -1,7 +1,6 @@
 import db from '../models/db.js';
 import Miner from './roleMining/fastMiner.js';
 import Formatter from './roleMining/mineDepartmentRoles.js';
-import Fetch from './roleMining/db-fetches.js';
 
 const fetchDepartments = async () => {
   const [rows] = await db.query('SELECT DepartmentId, DepartmentName FROM Departments');
@@ -127,11 +126,11 @@ const getDepartmentOverview = async (departmentNames, departmentIds) => {
 
 const mineDepartments = async (departmentNames, departmentIds) => {
   const departmentOverviews = await getDepartmentOverview(departmentNames);
-  const users = await Fetch.fetchDepUsers({ depIds: departmentIds });
+  const users = await Formatter.fetchDepUsers({ depIds: departmentIds });
   const userIds = users.map((user) => user.userId);
 
-  const usersFuncApps = await Fetch.fetchDepUserFuncApps(userIds);
-  const usersAppRoles = await Fetch.fetchDepUserPRMSHist(userIds);
+  const usersFuncApps = await Formatter.fetchDepUserFuncApps(userIds);
+  const usersAppRoles = await Formatter.fetchDepUserPRMSHist(userIds);
 
   const readyForMatrix = Formatter.groupAppRolesByUser(usersAppRoles, usersFuncApps);
   const allAppIds = [];
@@ -139,7 +138,7 @@ const mineDepartments = async (departmentNames, departmentIds) => {
     allAppIds.push(...readyForMatrix[userId]);
   }
 
-  const appList = await Fetch.fetchDepPRMS(allAppIds);
+  const appList = await Formatter.fetchDepPRMS(allAppIds);
   const appRoles = appList.reduce((acc, { appRoleId, appRoleName }) => {
     acc[appRoleId] = appRoleName;
     return acc;
