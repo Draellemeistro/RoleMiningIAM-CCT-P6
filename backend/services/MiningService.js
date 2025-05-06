@@ -15,8 +15,7 @@ const mineDepartments = async (departmentIds) => {
     allAppIds.push(...readyForMatrix[userId]);
   }
 
-  const appList = await Formatter.fetchDepPRMS(allAppIds);
-  const appRoles = appList.reduce((acc, { appRoleId, appRoleName }) => {
+  const appList = await Formatter.fetchDepPRMS(allAppIds); const appRoles = appList.reduce((acc, { appRoleId, appRoleName }) => {
     acc[appRoleId] = appRoleName;
     return acc;
   }, {});

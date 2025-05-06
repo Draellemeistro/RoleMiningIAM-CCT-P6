@@ -27,7 +27,6 @@ const getInfoAboutFuncAppRoles = async (departmentNames) => {
   return rows;
 }
 
-
 function mapDetailstoDepartment(rows, assignedAppRolesByUser) {
   const departmentMap = new Map();
 
@@ -95,7 +94,6 @@ function mapDetailstoDepartment(rows, assignedAppRolesByUser) {
 
   return Array.from(departmentMap.values());
 }
-;
 
 // TODO: remove departmentIds from function signature, if not used. (also remember to remove from function call in getAllDepartmentOverviews and in the controller)
 const getDepartmentOverview = async (departmentNames, departmentIds) => {

@@ -140,9 +140,7 @@ function translateRole(roleArray, appRoles) {
 
 const examplefunc = (components) => {
   const candidateRoles = fastMinerFromMatrix(components);
-
   const matrix = components.matrix.map(x => x.row);
-
   const { optRoles, entitlementCount } = basicRMP(matrix, candidateRoles);
 
   //pretty print the roles
