@@ -35,7 +35,7 @@ const getDepartmentOverview = async (req, res) => {
   // Logic time
   try {
     const analysisResults = await DepartmentService.getDepartmentOverview(departmentNames, departmentIds);
-    res.status(200).json(analysisResults);
+    res.status(200).json({ overviews: analysisResults });
   } catch (error) {
     console.error("Error analyzing roles:", error.message);
     res.status(500).json({ error: "Failed to analyze the specified departments" });

@@ -46,6 +46,7 @@ const Department = () => {
         { departmentList: selectedDepartments }
       );
 
+      console.log("Overview result:", res.data);
       setOverviewResult(res.data);
     } catch (err) {
       console.error("Error during analysis:", err);

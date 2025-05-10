@@ -3,6 +3,16 @@ import * as React from 'react';
 import { DataGrid } from '@mui/x-data-grid';
 import { Box } from '@mui/material';
 
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+  Typography,
+} from '@mui/material';
+
+import { Chip, Stack } from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+
 const rogueText = "*"; // smæk på rogue app roles
 const fNameWidth = 120;
 const funcRoleWidth = 120;
@@ -43,14 +53,33 @@ const generatedRowStyles = Object.entries(colorCodings)
 
 // TODO: Make the table responsive (or at least scrollable) on smaller screens
 export default function DepartmentDataGridRows({ departmentDataArr }) {
+  const depOverviews = departmentDataArr.overviews;
+
+  const adminRolesForTable = [];
   const tables = [];
-  departmentDataArr.forEach((departmentData) => {
-    tables.push(generateTableUserRows(departmentData));
+  try {
+    depOverviews.forEach((overview) => {
+      const { table, adminRoles } = generateTableUserRows(overview);
+      tables.push(table);
+      adminRolesForTable.push(adminRoles);
+      // adminRolesForTable.push(listAdminRoles(departmentData));
+    });
+  } catch (error) {
+    console.error("Error generating tables:", error);
+    return <div>Error generating tables</div>;
+  }
+  if (departmentDataArr.miningData) {
+    const minerTable = generateMinerTable(departmentDataArr.miningData);
+    tables.push(minerTable);
+  }
+
+  const mergedAdminRoles = new Set();
+  adminRolesForTable.forEach(roleSet => {
+    roleSet.forEach(role => mergedAdminRoles.add(role));
   });
 
   const dangerApps = [];
   const dangerThreshold = 1;
-
 
   for (const table of tables) {
     table.columns.forEach((col) => {
@@ -71,16 +100,10 @@ export default function DepartmentDataGridRows({ departmentDataArr }) {
       }
     });
   }
+  return FormatTablesForPageUserRows(tables, mergedAdminRoles, dangerApps);
+}
 
-  if (dangerApps.length > 0) {
-    return formatDangerApps(tables, dangerApps);
-  } else {
-    return FormatTablesForPageUserRows(tables);
-  }
-};
-
-
-function formatDangerApps(tables, dangerApps = []) {
+function FormatTablesForPageUserRows(tables, adminAccesses, dangerApps = [],) {
   return (
     <>
       {/* Legend Banner at the top */}
@@ -91,12 +114,14 @@ function formatDangerApps(tables, dangerApps = []) {
           border: '1px solid #b8daff',
           borderRadius: '4px',
           padding: '12px',
-          marginBottom: '24px',
+          marginBottom: '10px',
           fontSize: '14px',
           fontWeight: 500,
+          width: '80%',
+          alignSelf: 'center',
         }}
       >
-        <div style={{ marginBottom: '8px' }}>
+        <div style={{ marginBottom: '5px' }}>
           <strong>Legend:</strong> This table highlights permission types and unusual patterns:
         </div>
         <ul style={{ paddingLeft: '20px', marginBottom: 0 }}>
@@ -106,6 +131,39 @@ function formatDangerApps(tables, dangerApps = []) {
           <li><span style={{ border: '2px dashed purple', padding: '2px 4px', fontStyle: 'italic' }}>Dashed purple cell</span> = Rogue app role (unexpected or direct assignment)</li>
         </ul>
       </Box>
+
+      {adminAccesses.size > 0 && (
+        <Accordion
+          defaultExpanded={false}
+          sx={{
+            backgroundColor: '#f8d7da', // light red background
+            border: '1px solid #f5c6cb', // border similar to bootstrap alerts
+            color: '#721c24', // dark red text
+            borderRadius: '4px',
+            marginBottom: '5px',
+            width: '80%',
+            alignSelf: 'center',
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+          >
+            <Typography color="#721c24" fontWeight={600}>
+              <strong>WARNING: </strong> Admin-Level Roles Detected ({adminAccesses.size})
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>
+            <ul style={{ paddingLeft: '20px', marginTop: 0 }}>
+              {[...adminAccesses].map((roleName, i) => (
+                <li key={i}>{roleName}</li>
+              ))}
+            </ul>
+          </AccordionDetails>
+        </Accordion>
+      )}
+
+
+
       {tables.map((table, idx) => {
         const dangerForTable = dangerApps.filter(app => app.department === table.title);
 
@@ -127,20 +185,37 @@ function formatDangerApps(tables, dangerApps = []) {
                   marginBottom: '16px',
                   fontSize: '14px',
                   fontWeight: 500,
+                  width: '80%',
+                  alignSelf: 'center',
                 }}
               >
                 CAUTION: Rare Permissions in this Department:
-                <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
+                <Stack
+                  direction="row"
+                  flexWrap="wrap"
+                  gap={1}
+                  mt={1}
+                >
                   {dangerForTable.map((entry, i) => (
-                    <li key={i}>
-                      <strong>{entry.appName}</strong> — only {entry.count} user{entry.count !== 1 && 's'}
-                    </li>
+                    <Chip
+                      key={i}
+                      label={
+                        <span>
+                          <strong>{entry.appName}</strong> — {entry.count} user{entry.count !== 1 ? 's' : ''}
+                        </span>
+                      }
+                      sx={{
+                        backgroundColor: '#ffe8a1',
+                        color: '#856404',
+                        fontWeight: 500,
+                      }}
+                    />
                   ))}
-                </ul>
+                </Stack>
               </Box>
             )}
 
-            <Box sx={{ height: 900, width: '100%' }}>
+            <Box sx={{ height: 900, width: '90%' }}>
               <DataGrid
                 rows={table.rows}
                 columns={table.columns}
@@ -179,6 +254,7 @@ function generateTableUserRows(departmentData) {
   const columns = [];
   const appCols = [];
   const funcRoleTracker = [];
+  const adminRoles = new Set(); // To track admin roles for the table
 
   columns.push({
     field: 'fullName',
@@ -228,6 +304,9 @@ function generateTableUserRows(departmentData) {
       funcRole.appRoles.forEach((appRole) => {
         const appRoleName = appRole.name.replace(/\s*\([^)]*\)/g, '').trim() || 'N/A';
         const appRolePrivLevel = appRole.PrivLevel || 'N/A';
+        if (appRolePrivLevel === 'admin') {
+          adminRoles.add(appRoleName);
+        }
         row[appRoleName] = appRolePrivLevel;
       });
     });
@@ -256,6 +335,10 @@ function generateTableUserRows(departmentData) {
         });
       }
       row[rogueAppRole.name.replace(/\s*\([^)]*\)/g, '').trim()] = rogueAppRole.PrivLevel + rogueText || 'N/A';
+      if (rogueAppRole.PrivLevel === 'admin') {
+        adminRoles.add(rogueAppRole.name.replace(/\s*\([^)]*\)/g, '').trim());
+
+      }
     });
     rows.push(row);
     rowCounter++;
@@ -267,46 +350,17 @@ function generateTableUserRows(departmentData) {
     headerName: 'Functional Roles',
     width: funcRoleWidth,
   });
-  return {
+  const table = {
     rows: rows,
     columns: columns,
     title: departmentData.departmentName || 'N/A',
   }
+  return {
+    table,
+    adminRoles,
+  }
 }
 
-// Tabel regler og mui + sx styling
-function FormatTablesForPageUserRows(tables) {
-  return (
-    <>
-      {tables.map((table, idx) => (
-        <Box key={idx} sx={{ mb: 5 }}>
-          <div style={{ marginBottom: '8px', fontWeight: 'bold', textAlign: 'center', fontSize: '20px' }}>
-            {table.title || `Department ${idx + 1}`}
-          </div>
-          <Box sx={{ height: 900, width: '100%' }}>
-            <DataGrid
-              rows={table.rows}
-              columns={table.columns}
-              columnHeaderHeight={130}
-              getCellClassName={getCellStyleClassUserRows}
-              showCellVerticalBorder
-              showColumnVerticalBorder
-              pageSizeOptions={[5, 10, 20, { value: -1, label: 'All' }]}
-              initialState={{
-                pagination: {
-                  paginationModel: { pageSize: -1 },
-                },
-              }}
-              checkboxSelection
-              disableRowSelectionOnClick
-            />
-          </Box>
-        </Box>
-      ))}
-      <style>{generatedRowStyles}</style>
-    </>
-  )
-}
 
 // Find the cell style based on the value and field
 function getCellStyleClassUserRows(cellData) {
@@ -328,6 +382,8 @@ function generateMinerTable(departmentData) {
   const appRoles = departmentData.appRoles;
   const roleMatrix = departmentData.optRoles;
   const title = "Suggested Roles from Mining";
+  const fitArr = departmentData.fitArr;
+  const depFit = departmentData.depFit;
   const columns = [];
   const rows = [];
   const appRoleCols = [];
@@ -361,8 +417,13 @@ function generateMinerTable(departmentData) {
 
   let rowCounter = 0;
   for (const matrixRow of roleMatrix) {
+    const rawFit = fitArr[rowCounter];
+    const fit = isFinite(rawFit) ? `Best fit: ${(rawFit * 100).toFixed(2)}%` : "Best fit: Too Low";
+
+    const rawOverallFit = depFit[rowCounter];
+    const overallFit = isFinite(rawOverallFit) ? `Overall fit: ${(rawOverallFit * 100).toFixed(2)}%` : "Overall fit: Too Low";
     const rowId = `role-${rowCounter}`; // field names must be strings
-    const row = { id: rowId || 'N/A' };
+    const row = { id: rowId || 'N/A', fit: fit || 'N/A', overallFit: overallFit || 'N/A' };
     rowCounter++;
     for (const matrixCell of matrixRow) {
       const prmId = matrixCell;
@@ -374,7 +435,16 @@ function generateMinerTable(departmentData) {
     }
     rows.push(row);
   }
+  rowCounter = 0;
+  for (const fit of fitArr) {
+    const rowId = `role-${rowCounter}`; // field names must be strings
+    rows[rowCounter]['id'] = rowId || 'N/A';
+
+    rowCounter++;
+  }
   columns.push({ field: 'id', headerName: 'roles', width: 120 });
+  columns.push({ field: 'fit', headerName: 'Individual Fit', width: 120 });
+  columns.push({ field: 'overallFit', headerName: 'Total Fit', width: 120 });
   columns.push(...appRoleCols);
 
   return {
@@ -383,6 +453,7 @@ function generateMinerTable(departmentData) {
     title
   };
 }
+
 
 const getPermLevel = (appRoles, permId) => {
   const appName = appRoles[String(permId)];

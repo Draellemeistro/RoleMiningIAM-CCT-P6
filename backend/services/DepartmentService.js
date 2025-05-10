@@ -117,8 +117,8 @@ const getDepartmentOverview = async (departmentNames, departmentIds) => {
   }
 
   // Build structured result
-  const departmentData = mapDetailstoDepartment(rows, assignedAppRolesByUser);
-  return { overviews: departmentData };
+  const overview = mapDetailstoDepartment(rows, assignedAppRolesByUser);
+  return overview;
 };
 
 const mineDepartments = async (departmentNames, departmentIds) => {
