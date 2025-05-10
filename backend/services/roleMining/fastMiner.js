@@ -148,10 +148,68 @@ const examplefunc = (components) => {
   //   console.log('Role:', translateRole(role, appRoles));
   // }
 
+  const fitArr = calcIndividualFits(optRoles, matrix);
+  const depFits = calcDepFit(optRoles, matrix);
+
   return {
     optRoles: optRoles,
     entitlementCount: entitlementCount,
+    fitArr: fitArr,
+    depFit: depFits,
   };
+}
+
+const calcIndividualFits = (optRoleArray, ogRoleArray) => {
+  const roleFits = [];
+  const ogCopy = [...ogRoleArray];
+
+  for (const arr1 of optRoleArray) {
+    let bestFit = 0;
+    let rowToRemove = -1;
+
+    for (let j = 0; j < ogCopy.length; j++) {
+      const arr2 = ogCopy[j];
+      let matches = 0;
+
+      for (let i = 0; i < Math.min(arr1.length, arr2.length); i++) {
+        if (arr1[i] !== 0 && arr2[i] !== 0) {
+          matches++;
+        }
+      }
+
+      const currentFit = matches === 0 ? 0 : matches / arr2.length;
+      if (currentFit > bestFit) {
+        bestFit = currentFit;
+        rowToRemove = j;
+      }
+    }
+
+    if (rowToRemove !== -1) {
+      ogCopy.splice(rowToRemove, 1);
+    }
+    roleFits.push(bestFit);
+  }
+  return roleFits;
+}
+
+const calcDepFit = (optRoleArray, ogRoleArray) => {
+  const depFits = [];
+  for (const arr1 of optRoleArray) {
+    let matches = 0;
+    let arr2LenSum = 0;
+    for (const arr2 of ogRoleArray) {
+      arr2LenSum = arr2LenSum + arr2.length;
+      for (let i = 0; i < Math.min(arr1.length, arr2.length); i++) {
+        if (arr1[i] !== 0 && arr2[i] !== 0) {
+          matches++;
+        }
+      }
+    }
+    const overallFit = matches === 0 ? 0 : matches / arr2LenSum;
+    depFits.push(overallFit);
+  }
+
+  return depFits;
 }
 
 export default {
@@ -161,6 +219,8 @@ export default {
   arraysEqual,
   sumArray,
   sumMatrix,
+  calcIndividualFits,
+  calcDepFit,
   examplefunc,
 };
 

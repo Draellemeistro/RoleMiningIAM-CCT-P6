@@ -118,8 +118,7 @@ const getDepartmentOverview = async (departmentNames, departmentIds) => {
 
   // Build structured result
   const departmentData = mapDetailstoDepartment(rows, assignedAppRolesByUser);
-
-  return departmentData;
+  return { overviews: departmentData };
 };
 
 const mineDepartments = async (departmentNames, departmentIds) => {
@@ -143,19 +142,21 @@ const mineDepartments = async (departmentNames, departmentIds) => {
   }, {});
 
   const { apps, matrix } = Formatter.generateMatrix(readyForMatrix);
-  const { optRoles, entitlementCount } = Miner.examplefunc({ matrix, appRoles });
+  const { optRoles, entitlementCount, fitArr, depFit } = Miner.examplefunc({ matrix, appRoles });
 
   const miningRes = {
     appRoles: appRoles,
     optRoles: optRoles,
     entitlementCount: entitlementCount,
+    fitArr: fitArr,
+    depFit: depFit,
   }
 
-  const returnedData = [];
-  returnedData.push(...departmentOverviews);
-  returnedData.push(miningRes);
 
-  return returnedData;
+  return {
+    overviews: departmentOverviews,
+    miningData: miningRes,
+  };
 };
 
 // Skab alle afdelingsoversigter... måske ikke brugbar, men...
