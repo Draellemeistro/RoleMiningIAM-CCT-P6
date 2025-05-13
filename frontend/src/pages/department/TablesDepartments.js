@@ -1,17 +1,17 @@
 import * as React from 'react';
-
-import { DataGrid } from '@mui/x-data-grid';
-import { Box } from '@mui/material';
-
+import { Box, Accordion, AccordionSummary, AccordionDetails, Typography, Chip, Stack } from '@mui/material';
 import {
-  Accordion,
-  AccordionSummary,
-  AccordionDetails,
-  Typography,
-} from '@mui/material';
-
-import { Chip, Stack } from '@mui/material';
+  DataGrid,
+  GridToolbarExport,
+  GridToolbarContainer,
+  GridToolbarColumnsButton,
+  GridToolbarFilterButton,
+  GridToolbarDensitySelector,
+} from '@mui/x-data-grid';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import Tooltip from '@mui/material/Tooltip';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import PrintIcon from '@mui/icons-material/Print';
 
 const rogueText = "*"; // smæk på rogue app roles
 const fNameWidth = 120;
@@ -106,138 +106,138 @@ export default function DepartmentDataGridRows({ departmentDataArr }) {
 function FormatTablesForPageUserRows(tables, adminAccesses, dangerApps = [],) {
   return (
     <>
-      {/* Legend Banner at the top */}
       <Box
         sx={{
-          backgroundColor: '#e6f7ff',
-          color: '#004085',
-          border: '1px solid #b8daff',
-          borderRadius: '4px',
-          padding: '12px',
-          marginBottom: '10px',
-          fontSize: '14px',
-          fontWeight: 500,
-          width: '80%',
-          alignSelf: 'center',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 2,
+          px: 2,
         }}
       >
-        <div style={{ marginBottom: '5px' }}>
-          <strong>Legend:</strong> This table highlights permission types and unusual patterns:
-        </div>
-        <ul style={{ paddingLeft: '20px', marginBottom: 0 }}>
-          <li><span style={{ backgroundColor: 'rgba(255, 0, 0, 0.4)', padding: '2px 4px' }}>Red</span> = Admin access</li>
-          <li><span style={{ backgroundColor: 'rgba(255, 255, 0, 0.4)', padding: '2px 4px' }}>Yellow</span> = Write access</li>
-          <li><span style={{ backgroundColor: 'rgba(0, 255, 0, 0.4)', padding: '2px 4px' }}>Green</span> = Read access</li>
-          <li><span style={{ border: '2px dashed purple', padding: '2px 4px', fontStyle: 'italic' }}>Dashed purple cell</span> = Rogue app role (unexpected or direct assignment)</li>
-        </ul>
-      </Box>
+        {/* Accordion */}
+        {adminAccesses.size > 0 && (
+          <Accordion
+            defaultExpanded={false}
+            sx={{
+              backgroundColor: '#f8d7da',
+              border: '1px solid #f5c6cb',
+              color: '#721c24',
+              borderRadius: '4px',
+            }}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography color="#721c24" fontWeight={600}>
+                <strong>WARNING: </strong> Admin-Level Roles Detected ({adminAccesses.size})
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <ul style={{ paddingLeft: '20px', marginTop: 0 }}>
+                {[...adminAccesses].map((roleName, i) => (
+                  <li key={i}>{roleName}</li>
+                ))}
+              </ul>
+            </AccordionDetails>
+          </Accordion>
+        )}
 
-      {adminAccesses.size > 0 && (
-        <Accordion
-          defaultExpanded={false}
+        {/* Tables */}
+        {tables.map((table, idx) => {
+          const dangerForTable = dangerApps.filter(app => app.department === table.title);
+
+          return (
+            <Box key={idx} sx={{ width: '100%', maxWidth: '2000px' }}>
+              {dangerForTable.length > 0 && (
+                <Box
+                  sx={{
+                    backgroundColor: '#fff3cd',
+                    color: '#856404',
+                    border: '1px solid #ffeeba',
+                    borderRadius: '4px',
+                    padding: '12px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    mb: 2,
+                  }}
+                >
+                  CAUTION: Rare Permissions in this Department:
+                  <Stack direction="row" flexWrap="wrap" gap={1} mt={1}>
+                    {dangerForTable.map((entry, i) => (
+                      <Chip
+                        key={i}
+                        label={
+                          <span>
+                            <strong>{entry.appName}</strong> — {entry.count} user{entry.count !== 1 ? 's' : ''}
+                          </span>
+                        }
+                        sx={{
+                          backgroundColor: '#ffe8a1',
+                          color: '#856404',
+                          fontWeight: 500,
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+
+              <Box>
+                <DataGrid
+                  rows={table.rows}
+                  columns={table.columns}
+                  columnHeaderHeight={130}
+                  getCellClassName={getCellStyleClassUserRows}
+                  showCellVerticalBorder
+                  showColumnVerticalBorder
+                  pageSizeOptions={[5, 10, 20, { value: -1, label: 'All' }]}
+                  initialState={{
+                    pagination: {
+                      paginationModel: { pageSize: -1 },
+                    },
+                  }}
+                  slots={{
+                    toolbar: CustomToolbar,
+                  }}
+                  slotProps={{
+                    toolbar: {
+                      tableTitle: table.title || `Department ${idx + 1}`,
+                    },
+                  }}
+                  disableRowSelectionOnClick
+                  showToolbar
+                />
+              </Box>
+            </Box>
+          );
+        })}
+
+        <style>{generatedRowStyles}</style>
+        {/* Legend Banner */}
+        <Box
           sx={{
-            backgroundColor: '#f8d7da', // light red background
-            border: '1px solid #f5c6cb', // border similar to bootstrap alerts
-            color: '#721c24', // dark red text
+            backgroundColor: '#e6f7ff',
+            color: '#004085',
+            border: '1px solid #b8daff',
             borderRadius: '4px',
-            marginBottom: '5px',
-            width: '80%',
-            alignSelf: 'center',
+            padding: '12px',
+            fontSize: '14px',
+            fontWeight: 500,
           }}
         >
-          <AccordionSummary
-            expandIcon={<ExpandMoreIcon />}
-          >
-            <Typography color="#721c24" fontWeight={600}>
-              <strong>WARNING: </strong> Admin-Level Roles Detected ({adminAccesses.size})
-            </Typography>
-          </AccordionSummary>
-          <AccordionDetails>
-            <ul style={{ paddingLeft: '20px', marginTop: 0 }}>
-              {[...adminAccesses].map((roleName, i) => (
-                <li key={i}>{roleName}</li>
-              ))}
-            </ul>
-          </AccordionDetails>
-        </Accordion>
-      )}
+          <div style={{ marginBottom: '5px' }}>
+            <strong>Legend:</strong> This table highlights permission types and unusual patterns:
+          </div>
+          <ul style={{ paddingLeft: '20px', marginBottom: 0 }}>
+            <li><span style={{ backgroundColor: 'rgba(255, 0, 0, 0.4)', padding: '2px 4px' }}>Red</span> = Admin access</li>
+            <li><span style={{ backgroundColor: 'rgba(255, 255, 0, 0.4)', padding: '2px 4px' }}>Yellow</span> = Write access</li>
+            <li><span style={{ backgroundColor: 'rgba(0, 255, 0, 0.4)', padding: '2px 4px' }}>Green</span> = Read access</li>
+            <li><span style={{ border: '2px dashed purple', padding: '2px 4px', fontStyle: 'italic' }}>Dashed purple cell</span> = Rogue app role</li>
+          </ul>
+        </Box>
 
-
-
-      {tables.map((table, idx) => {
-        const dangerForTable = dangerApps.filter(app => app.department === table.title);
-
-        return (
-          <Box key={idx} sx={{ mb: 5 }}>
-            <div style={{ marginBottom: '8px', fontWeight: 'bold', textAlign: 'center', fontSize: '20px' }}>
-              {table.title || `Department ${idx + 1}`}
-            </div>
-
-            {/* Banner for rare/rogue permissions */}
-            {dangerForTable.length > 0 && (
-              <Box
-                sx={{
-                  backgroundColor: '#fff3cd',
-                  color: '#856404',
-                  border: '1px solid #ffeeba',
-                  borderRadius: '4px',
-                  padding: '12px',
-                  marginBottom: '16px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                  width: '80%',
-                  alignSelf: 'center',
-                }}
-              >
-                CAUTION: Rare Permissions in this Department:
-                <Stack
-                  direction="row"
-                  flexWrap="wrap"
-                  gap={1}
-                  mt={1}
-                >
-                  {dangerForTable.map((entry, i) => (
-                    <Chip
-                      key={i}
-                      label={
-                        <span>
-                          <strong>{entry.appName}</strong> — {entry.count} user{entry.count !== 1 ? 's' : ''}
-                        </span>
-                      }
-                      sx={{
-                        backgroundColor: '#ffe8a1',
-                        color: '#856404',
-                        fontWeight: 500,
-                      }}
-                    />
-                  ))}
-                </Stack>
-              </Box>
-            )}
-
-            <Box sx={{ height: 900, width: '90%' }}>
-              <DataGrid
-                rows={table.rows}
-                columns={table.columns}
-                columnHeaderHeight={130}
-                getCellClassName={getCellStyleClassUserRows}
-                showCellVerticalBorder
-                showColumnVerticalBorder
-                pageSizeOptions={[5, 10, 20, { value: -1, label: 'All' }]}
-                initialState={{
-                  pagination: {
-                    paginationModel: { pageSize: -1 },
-                  },
-                }}
-                checkboxSelection
-                disableRowSelectionOnClick
-              />
-            </Box>
-          </Box>
-        );
-      })}
-      <style>{generatedRowStyles}</style>
+      </Box>
     </>
+
   );
 }
 
@@ -290,7 +290,7 @@ function generateTableUserRows(departmentData) {
                     display: 'flex', // Flexbox to center the text
                     alignItems: 'center', // Vertically center
                     justifyContent: 'center', // Horizontally center
-                    height: '120px', // Adjust height as needed
+                    height: '130px', // Adjust height as needed
                     width: '50px', // Adjust width as needed
                   }}>
                   {colDef.headerName.replace(/\s*\([^)]*\)/g, '').trim()}
@@ -326,7 +326,7 @@ function generateTableUserRows(departmentData) {
                 display: 'flex', // Flexbox to center the text
                 alignItems: 'center', // Vertically center
                 justifyContent: 'center', // Horizontally center
-                height: '120px', // Adjust height as needed
+                height: '130px', // Adjust height as needed
                 width: '50px', // Adjust width as needed
               }}>
               {colDef.headerName.replace(/\s*\([^)]*\)/g, '').trim()}
@@ -359,23 +359,6 @@ function generateTableUserRows(departmentData) {
     table,
     adminRoles,
   }
-}
-
-
-// Find the cell style based on the value and field
-function getCellStyleClassUserRows(cellData) {
-  const value = cellData.value;
-  const field = cellData.field;
-  if (field === 'fullName' || field === 'funcRoles') return '';
-  if (!value || typeof value !== 'string') return '';
-
-  const lower = value.toLowerCase();
-  const isRogue = value.includes('*');
-
-  const match = Object.keys(colorCodings).find(key => lower.includes(key));
-  const baseClass = match ? `priv-${match}` : '';
-
-  return isRogue ? `${baseClass} rogue-cell` : baseClass;
 }
 
 function generateMinerTable(departmentData) {
@@ -455,9 +438,47 @@ function generateMinerTable(departmentData) {
 }
 
 
+const CustomToolbar = ({ tableTitle }) => {
+  return (
+    <GridToolbarContainer sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1, pb: 1, mb: 1 }}>
+      <Typography fontWeight="medium">
+        {tableTitle}
+      </Typography>
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <GridToolbarColumnsButton />
+        <GridToolbarFilterButton />
+        <GridToolbarDensitySelector slotProps={{ tooltip: { title: 'Change density' } }} />
+        <GridToolbarExport
+          slotProps={{
+            tooltip: { title: 'Export data' },
+            button: { variant: 'outlined' },
+          }}
+        />
+      </Box>
+    </GridToolbarContainer>
+  );
+};
+
+
 const getPermLevel = (appRoles, permId) => {
   const appName = appRoles[String(permId)];
   const match = appName.match(/\((\w+)\saccess\)/);
   return match ? match[1] : null;
+}
+
+// Find the cell style based on the value and field
+function getCellStyleClassUserRows(cellData) {
+  const value = cellData.value;
+  const field = cellData.field;
+  if (field === 'fullName' || field === 'funcRoles') return '';
+  if (!value || typeof value !== 'string') return '';
+
+  const lower = value.toLowerCase();
+  const isRogue = value.includes('*');
+
+  const match = Object.keys(colorCodings).find(key => lower.includes(key));
+  const baseClass = match ? `priv-${match}` : '';
+
+  return isRogue ? `${baseClass} rogue-cell` : baseClass;
 }
 

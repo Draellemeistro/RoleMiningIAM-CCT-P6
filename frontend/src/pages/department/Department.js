@@ -63,7 +63,6 @@ const Department = () => {
       return;
     }
 
-
     const rows = [];
 
     const pushRows = (departmentName, userFullName, funcRoleName, appRoles) => {
@@ -124,6 +123,7 @@ const Department = () => {
           alignItems: "center",
           gap: 2,
           marginTop: 10,
+          marginBottom: 4,
         }}
       >
         {/* Autocomplete for selecting departments */}
@@ -159,20 +159,21 @@ const Department = () => {
         >
           Suggest Role Setup
         </Button>
+
+        <Button
+          variant="contained"
+          onClick={() => downloadCSV(overviewResult)}
+          disabled={!overviewResult}
+        >
+          Download Results
+        </Button>
       </Box>
 
       {/* Result section */}
       {overviewResult && (
 
-        <Box sx={{ marginTop: 4, }}>
-          {/*<DepartmentDataTable departmentDataArr={overviewResult} />
-*/}
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 2 }}>
-            <Button variant="outlined" onClick={() => downloadCSV(overviewResult)}>
-              Download Results
-            </Button>
-          </Box>
-
+        <Box sx={{ marginTop: 6, marginBottom: 6 }}>
+          {/*<DepartmentDataTable departmentDataArr={overviewResult} />*/}
           <DepartmentDataGrid departmentDataArr={overviewResult} />
           {/* Modal for raw JSON */}
           <Box sx={{ textAlign: "center", mt: 2 }}>
