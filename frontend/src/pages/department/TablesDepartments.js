@@ -243,7 +243,6 @@ function FormatTablesForPageUserRows(tables, adminAccesses, dangerApps = [],) {
 
 
 // TODO: Make user clickable to open a modal with more information about the user (or send to another page)
-// TODO: Make the table sortable by column
 function generateTableUserRows(departmentData) {
   if (departmentData.optRoles) {
     return generateMinerTable(departmentData);
