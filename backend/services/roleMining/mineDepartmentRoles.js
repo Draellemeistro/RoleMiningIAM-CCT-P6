@@ -1,7 +1,6 @@
 import db from '../../models/db.js';
 import fs from 'fs';
-import Fetch from './db-fetches.js';
-import Miner from './miningAlgs.js';
+import { QUERY_USERS, QUERY_PRMS, QUERY_USER_PERMS, QUERY_USER_PRMS_HIST } from './queries.js';
 /* . The user-permission assignment relation that specifies which individuals had access to which resources in the original system can be
 represented in the form of a Boolean matrix UPA.
 the rows and columns of the matrix correspond to users and permissions, respectively.
@@ -18,7 +17,7 @@ sometimes contain a role-role relationship constituting a role hierarchy.
 
 function groupAppRolesByUser(uApps, uFAPs) {
   const tempMap = new Map();
-  const userPerms = new Map();
+
   // Step 1: Collect all appRoleIds per user in a Set
   function addRole(userId, appRoleId) {
     if (!tempMap.has(userId)) {
@@ -51,77 +50,8 @@ function groupAppRolesByUser(uApps, uFAPs) {
   return finalObject;
 }
 
-
-function groupPAByFuncRole(pa) {
-  const map = new Map();
-
-  // Iterate over the PA data
-  for (const { funcRoleId, appRoleId } of pa) {
-    if (!map.has(funcRoleId)) {
-      map.set(funcRoleId, []);
-    }
-    map.get(funcRoleId).push(appRoleId);
-  }
-
-  // Return the structured result
-  return Array.from(map.entries()).map(([funcRoleId, appRoleIds]) => ({
-    funcRoleId,
-    appRoleIds,
-  }));
-}
-
-function groupRolesByUserId(data, roleType) {
-  const map = new Map();
-
-  // Iterate over the data and map userId to respective roles
-  for (const { userId, [roleType]: roleId } of data) {
-    if (!map.has(userId)) {
-      map.set(userId, []);
-    }
-    map.get(userId).push(roleId);
-  }
-
-  // Return the structured result with specific role name
-  return Array.from(map.entries()).map(([userId, roles]) => ({
-    userId,
-    [roleType === 'funcRoleId' ? 'funcRoleIds' : 'appRoleIds']: roles,
-  }));
-}
-
-const makeMatrixUPA = async (departmentIds) => {
-  // the UPA relationcan be derived by joining the following tables:
-  // users → user_functionalroles → functionalroles → funcrole_approle → applicationroles
-  const users = await Fetch.fetchDepUsers({ depIds: departmentIds });
-  const userIds = users.map((user) => user.userId);
-
-  const usersAppRoles = await Fetch.fetchDepUserPRMSHist(userIds);
-  const usersFuncApps = await Fetch.fetchDepUserFuncApps(userIds);
-
-  const readyForMatrix = groupAppRolesByUser(usersAppRoles, usersFuncApps);
-  const matrix = generateMatrix(readyForMatrix);
-  const minedRoles = mineAndCompare(matrix);
-  // const { initRoles, generatedRoles } = fastMiner(matrix);
-  // const csv = generateCSVFromMatrixObject(matrix);
-  // fs.writeFileSync('matrix.csv', csv, 'utf8');
-
-  return matrix;
-};
-
-const generateCSVFromMatrixObject = ({ Apps, matrix }) => {
-  const header = ['UserID', ...Apps].join(',');
-  const rows = [header];
-
-  for (const entry of matrix) {
-    const row = [entry.userId, ...entry.row].join(',');
-    rows.push(row);
-  }
-  return rows.join('\n');
-};
-
-
 const generateMatrix = (userPermsMapping) => {
   const uniqueAppRoles = new Set();
-  // fs.writeFileSync('userPermsMapping.json', JSON.stringify(userPermsMapping, null, 2), 'utf8');
   for (const roles of Object.values(userPermsMapping)) {
     roles.forEach((role) => uniqueAppRoles.add(role));
   }
@@ -140,69 +70,73 @@ const generateMatrix = (userPermsMapping) => {
   }
 };
 
-const mineAndCompare = ({ Apps, matrix }) => {
-  const minedRoles = Miner.fastMiner({ Apps, matrix });
-  // const minedRoles = anotherMiner({ Apps, matrix });
+// fetch specific functions
+const fetchDepUsers = async (depFilter = {}) => {
+  const { depIds, depNames } = depFilter;
+  let query = QUERY_USERS;
+  const params = [];
 
-  console.log(JSON.stringify(minedRoles, null, 2));
-  console.log("Mined Roles:", minedRoles);
+  // To handle multiple departments and filter by them
+  if (depIds && depIds.length) {
+    query += ` WHERE u.DepartmentId IN (${depIds.map(() => '?').join(', ')})`;
+    params.push(...depIds);
+  } else if (depNames && depNames.length) {
+    query += ` WHERE d.DepartmentName IN (${depNames.map(() => '?').join(', ')})`;
+    params.push(...depNames);
+  } else {
+    return [];
+  }
 
-  return minedRoles;
+  const [rows] = await db.query(query, params);
+  return rows;
+};
+
+// PRMS - Permissions ... which are our AppRoles
+const fetchDepPRMS = async (appRoleIds) => {
+  let query = QUERY_PRMS;
+  const params = [];
+  if (appRoleIds && appRoleIds.length) {
+    query += ` WHERE AppRoleId IN (${appRoleIds.map(() => '?').join(', ')})`;
+    params.push(...appRoleIds);
+  } else {
+    return [];
+  }
+  const [rows] = await db.query(query, params);
+  return rows;
 }
 
-async function getMiningComponentsDepartment(departmentIds) {
-  const users = await Fetch.fetchDepUsers({ depIds: departmentIds });
-
-  const userIds = users.map((user) => user.userId);
-
-  const ua = await Fetch.fetchDepUA(userIds);
-  const groupedUA = groupRolesByUserId(ua, "funcRoleId");
-  const roles = [...new Set(ua.map(({ funcRoleId }) => funcRoleId))];
-
-  const upa = await Fetch.fetchDepUserPRMSHist(userIds); // assuming this is your UPA
-  const groupedUPA = groupRolesByUserId(upa, "appRoleId")
-  const perms = [...new Set(upa.map(({ appRoleId }) => appRoleId))];
-
-  const pa = await Fetch.fetchDepPA({ funcRoleIds: roles });
-  const groupedPA = groupPAByFuncRole(pa);
-
-  const miningComponents = {
-    UPA: groupedUPA, // 
-    UA: groupedUA, // each role is represented via a column of UA
-    users: userIds, // 
-    PA: groupedPA,
-    PRMS: perms,
-    roles: roles,
-  };
-
-  return miningComponents;
+const fetchDepUserPRMSHist = async (userIds) => {
+  let query = QUERY_USER_PRMS_HIST;
+  const params = [];
+  if (userIds && userIds.length) {
+    query += ` WHERE UserId IN (${userIds.map(() => '?').join(', ')})`;
+    params.push(...userIds);
+  } else {
+    return [];
+  }
+  const [rows] = await db.query(query, params);
+  return rows;
 }
 
-// det er UPA'en der er den helt vigtige ting at bruge. Det er den der skal decomposes...
-async function getMiningComponents() {
-  const users = await Fetch.fetchAllUsers();
-  const prms = await Fetch.fetchAllPRMS();
-  const roles = await Fetch.fetchAllRoles();
-  const ua = await Fetch.fetchAllUA();
-  const pa = await Fetch.fetchAllPA();
-  const upa = await Fetch.fetchAllUPA();
-
-  const miningComponents = {
-    UPA: upa, // 
-    UA: ua, // each role is represented via a column of UA
-    PA: pa, // each role is represented via a row of PA
-    users: users, // 
-    PRMS: prms, // 
-    roles: roles, // 
-  };
-
-  return miningComponents;
+const fetchDepUserFuncApps = async (userIds) => {
+  let query = QUERY_USER_PERMS;
+  const params = [];
+  if (userIds && userIds.length) {
+    query += ` WHERE UserId IN (${userIds.map(() => '?').join(', ')})`;
+    params.push(...userIds);
+  } else {
+    return [];
+  }
+  const [rows] = await db.query(query, params);
+  return rows;
 }
 
 export default {
-  getMiningComponents,
-  getMiningComponentsDepartment,
-  makeMatrixUPA,
   groupAppRolesByUser,
   generateMatrix,
+
+  fetchDepUsers,
+  fetchDepPRMS,
+  fetchDepUserPRMSHist,
+  fetchDepUserFuncApps,
 };

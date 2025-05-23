@@ -1,11 +1,10 @@
-import MiningService from '../services/roleMining/MiningService.js';
+import MiningService from '../services/MiningService.js';
 
 const analyzeDepartments = async (req, res) => {
   const { departmentList } = req.body;
   if (!Array.isArray(departmentList) || departmentList.length === 0) {
     return res.status(400).json({ error: "departmentList must be a non-empty array" });
   }
-  console.log("departmentList", departmentList);
 
   const departmentIds = [];
   const departmentNames = [];

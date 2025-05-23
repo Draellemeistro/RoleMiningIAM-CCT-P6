@@ -3,12 +3,10 @@
 function fastMinerFromMatrix(components) {
   // Build user-permission array
   const UP = components.matrix.map(x => x.row);
-  const appRoles = components.appRoles;
 
   // Remove duplicate rows and all-zero rows
   const uniqueUP = Array.from(new Set(UP.map(x => JSON.stringify(x)))).map(x => JSON.parse(x));
   const cleanedUP = uniqueUP.filter(x => x.some(p => p !== 0));
-  console.log('cleanedUP', cleanedUP);
 
   const InitRoles = [];
   const OrigCount = [];
@@ -16,9 +14,7 @@ function fastMinerFromMatrix(components) {
   const GenCount = [];
   const Contributors = [];
 
-  let loopCount = 0;
   for (const user of cleanedUP) {
-    // console.log('user', user);
     const existsIndex = InitRoles.findIndex(r => arraysEqual(r, user));
     if (existsIndex === -1) {
       InitRoles.push(user);
@@ -32,8 +28,6 @@ function fastMinerFromMatrix(components) {
 
   for (const InitRole of InitRolesIter) {
     for (const CandRole of InitRolesIter) {
-      // console.log('CandRole', CandRole);
-      // console.log('newRole', CandRole.map((val, idx) => (val && InitRole[idx]) ? 1 : 0));
       const NewRole = CandRole.map((val, idx) => (val && InitRole[idx]) ? val : 0);
 
       if (!GenRoles.some(role => arraysEqual(role, NewRole))) {
@@ -62,10 +56,6 @@ function basicRMP(UPMatrix, CandRolesMatrix, MaxRoles = 100) {
   const EntitlementCount = [];
   let iters = 0;
   let UP_Remain = UP.map(row => [...row]);
-
-  // console.log('\nUPMatrix', UPMatrix);
-  // console.log('\nCandRolesMatrix', CandRolesMatrix);
-
 
   // Fix constraints assignment
   for (let i = 0; i < CandRolesMatrix.length; i++) {
@@ -150,10 +140,7 @@ function translateRole(roleArray, appRoles) {
 
 const examplefunc = (components) => {
   const candidateRoles = fastMinerFromMatrix(components);
-
   const matrix = components.matrix.map(x => x.row);
-  const appRoles = components.appRoles;
-
   const { optRoles, entitlementCount } = basicRMP(matrix, candidateRoles);
 
   //pretty print the roles
@@ -161,10 +148,68 @@ const examplefunc = (components) => {
   //   console.log('Role:', translateRole(role, appRoles));
   // }
 
+  const fitArr = calcIndividualFits(optRoles, matrix);
+  const depFits = calcDepFit(optRoles, matrix);
+
   return {
     optRoles: optRoles,
     entitlementCount: entitlementCount,
+    fitArr: fitArr,
+    depFit: depFits,
   };
+}
+
+const calcIndividualFits = (optRoleArray, ogRoleArray) => {
+  const roleFits = [];
+  const ogCopy = [...ogRoleArray];
+
+  for (const arr1 of optRoleArray) {
+    let bestFit = 0;
+    let rowToRemove = -1;
+
+    for (let j = 0; j < ogCopy.length; j++) {
+      const arr2 = ogCopy[j];
+      let matches = 0;
+
+      for (let i = 0; i < Math.min(arr1.length, arr2.length); i++) {
+        if (arr1[i] !== 0 && arr2[i] !== 0) {
+          matches++;
+        }
+      }
+
+      const currentFit = matches === 0 ? 0 : matches / arr2.length;
+      if (currentFit > bestFit) {
+        bestFit = currentFit;
+        rowToRemove = j;
+      }
+    }
+
+    if (rowToRemove !== -1) {
+      ogCopy.splice(rowToRemove, 1);
+    }
+    roleFits.push(bestFit);
+  }
+  return roleFits;
+}
+
+const calcDepFit = (optRoleArray, ogRoleArray) => {
+  const depFits = [];
+  for (const arr1 of optRoleArray) {
+    let matches = 0;
+    let arr2LenSum = 0;
+    for (const arr2 of ogRoleArray) {
+      arr2LenSum = arr2LenSum + arr2.length;
+      for (let i = 0; i < Math.min(arr1.length, arr2.length); i++) {
+        if (arr1[i] !== 0 && arr2[i] !== 0) {
+          matches++;
+        }
+      }
+    }
+    const overallFit = matches === 0 ? 0 : matches / arr2LenSum;
+    depFits.push(overallFit);
+  }
+
+  return depFits;
 }
 
 export default {
@@ -174,6 +219,8 @@ export default {
   arraysEqual,
   sumArray,
   sumMatrix,
+  calcIndividualFits,
+  calcDepFit,
   examplefunc,
 };
 

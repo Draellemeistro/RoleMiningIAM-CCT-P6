@@ -1,6 +1,5 @@
 import Navbar from "../components/Navbar";
 import config from "../../config";
-// import { drawerHeight } from "../components/Navbar";
 import { Box, Autocomplete, TextField, Button } from "@mui/material";
 import React, { useState, useEffect } from "react";
 import axios from "axios";
@@ -47,12 +46,71 @@ const Department = () => {
         { departmentList: selectedDepartments }
       );
 
+      console.log("Overview result:", res.data);
       setOverviewResult(res.data);
     } catch (err) {
       console.error("Error during analysis:", err);
     }
   };
 
+  const downloadCSV = (data) => {
+    if (!data) return;
+
+    if (data.overviews) {
+      console.log("Data contains overviews:");
+      console.log(data.overviews);
+      downloadCSV(data.overviews);
+      return;
+    }
+
+    const rows = [];
+
+    const pushRows = (departmentName, userFullName, funcRoleName, appRoles) => {
+      appRoles.forEach((appRole) => {
+        rows.push({
+          Department: departmentName,
+          User: userFullName,
+          FunctionalRole: funcRoleName,
+          AppRoleName: appRole.name,
+          PrivilegeLevel: appRole.PrivLevel,
+        });
+      });
+    };
+
+    data.forEach((department) => {
+      const depName = department.departmentName;
+      department.departmentUsers.forEach((user) => {
+        user.funcRoles.forEach((funcRole) => {
+          pushRows(depName, user.fullName, funcRole.name, funcRole.appRoles);
+        });
+      });
+    });
+
+    const headers = [
+      "Department",
+      "User",
+      "FunctionalRole",
+      "AppRoleName",
+      "PrivilegeLevel",
+    ];
+
+    const csvContent =
+      headers.join(",") +
+      "\n" +
+      rows
+        .map((row) =>
+          headers.map((header) => `"${row[header] || ""}"`).join(",")
+        )
+        .join("\n");
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const link = document.createElement("a");
+    link.href = URL.createObjectURL(blob);
+    link.setAttribute("download", "department-details.csv");
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }
 
   return (
     <Box>
@@ -65,6 +123,7 @@ const Department = () => {
           alignItems: "center",
           gap: 2,
           marginTop: 10,
+          marginBottom: 4,
         }}
       >
         {/* Autocomplete for selecting departments */}
@@ -100,13 +159,21 @@ const Department = () => {
         >
           Suggest Role Setup
         </Button>
+
+        <Button
+          variant="contained"
+          onClick={() => downloadCSV(overviewResult)}
+          disabled={!overviewResult}
+        >
+          Download Results
+        </Button>
       </Box>
 
       {/* Result section */}
       {overviewResult && (
-        <Box sx={{ marginTop: 4, }}>
-          {/*<DepartmentDataTable departmentDataArr={overviewResult} />
-*/}
+
+        <Box sx={{ marginTop: 6, marginBottom: 6 }}>
+          {/*<DepartmentDataTable departmentDataArr={overviewResult} />*/}
           <DepartmentDataGrid departmentDataArr={overviewResult} />
           {/* Modal for raw JSON */}
           <Box sx={{ textAlign: "center", mt: 2 }}>

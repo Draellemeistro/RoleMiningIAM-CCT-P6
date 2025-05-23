@@ -1,63 +1,6 @@
 import db from '../models/db.js';
 import Miner from './roleMining/fastMiner.js';
 import Formatter from './roleMining/mineDepartmentRoles.js';
-import Fetch from './roleMining/db-fetches.js';
-
-function groupByUserWithFuncRoles(rows, assignedAppRolesByUser) {
-  const userMap = new Map();
-
-  for (const row of rows) {
-    if (!userMap.has(row.UserId)) {
-      userMap.set(row.UserId, {
-        DepartmentId: row.DepartmentId,
-        UserId: row.UserId,
-        FullName: row.FullName,
-        FunctionalRole: [],
-        rogueAppRoles: [] // ← added
-      });
-    }
-
-    const user = userMap.get(row.UserId);
-
-    // Add functional role if not yet added
-    let funcRole = user.FunctionalRole.find(fr => fr.name === row.FunctionalRole);
-    if (!funcRole) {
-      funcRole = {
-        name: row.FunctionalRole,
-        appRoles: []
-      };
-      user.FunctionalRole.push(funcRole);
-    }
-
-    // Add app role to the functional role
-    funcRole.appRoles.push({
-      name: row.AppRoleName,
-      PrivLevel: row.PrivilegeLevel
-    });
-  }
-
-  // Identify rogue(singleton) app roles per user
-  for (const [userId, userData] of userMap.entries()) {
-    const assigned = assignedAppRolesByUser[userId] || [];
-
-    // Build set of expected AppRoleNames from all func roles
-    const expectedAppRoleNames = new Set(
-      userData.FunctionalRole.flatMap(fr =>
-        fr.appRoles.map(ar => ar.name)
-      )
-    );
-
-    // Compare: what's in assigned but not in expected
-    const rogue = assigned.filter(ar => !expectedAppRoleNames.has(ar.AppRoleName));
-
-    userData.rogueAppRoles = rogue.map(ar => ({
-      name: ar.AppRoleName,
-      PrivLevel: ar.PrivilegeLevel
-    }));
-  }
-
-  return Array.from(userMap.values());
-}
 
 const fetchDepartments = async () => {
   const [rows] = await db.query('SELECT DepartmentId, DepartmentName FROM Departments');
@@ -83,7 +26,6 @@ const getInfoAboutFuncAppRoles = async (departmentNames) => {
   const [rows] = await db.query(query, departmentNames);
   return rows;
 }
-
 
 function mapDetailstoDepartment(rows, assignedAppRolesByUser) {
   const departmentMap = new Map();
@@ -152,7 +94,6 @@ function mapDetailstoDepartment(rows, assignedAppRolesByUser) {
 
   return Array.from(departmentMap.values());
 }
-;
 
 // TODO: remove departmentIds from function signature, if not used. (also remember to remove from function call in getAllDepartmentOverviews and in the controller)
 const getDepartmentOverview = async (departmentNames, departmentIds) => {
@@ -176,47 +117,46 @@ const getDepartmentOverview = async (departmentNames, departmentIds) => {
   }
 
   // Build structured result
-  const departmentData = mapDetailstoDepartment(rows, assignedAppRolesByUser);
-
-  console.log("Department data list:", departmentData[0]);
-  return departmentData;
+  const overview = mapDetailstoDepartment(rows, assignedAppRolesByUser);
+  return overview;
 };
 
 const mineDepartments = async (departmentNames, departmentIds) => {
   const departmentOverviews = await getDepartmentOverview(departmentNames);
-  const users = await Fetch.fetchDepUsers({ depIds: departmentIds });
+  const users = await Formatter.fetchDepUsers({ depIds: departmentIds });
   const userIds = users.map((user) => user.userId);
 
-  const usersFuncApps = await Fetch.fetchDepUserFuncApps(userIds);
-  const usersAppRoles = await Fetch.fetchDepUserPRMSHist(userIds);
+  const usersFuncApps = await Formatter.fetchDepUserFuncApps(userIds);
+  const usersAppRoles = await Formatter.fetchDepUserPRMSHist(userIds);
 
-  // TODO:
   const readyForMatrix = Formatter.groupAppRolesByUser(usersAppRoles, usersFuncApps);
   const allAppIds = [];
   for (const userId in readyForMatrix) {
     allAppIds.push(...readyForMatrix[userId]);
   }
 
-  const appList = await Fetch.fetchDepPRMS(allAppIds);
+  const appList = await Formatter.fetchDepPRMS(allAppIds);
   const appRoles = appList.reduce((acc, { appRoleId, appRoleName }) => {
     acc[appRoleId] = appRoleName;
     return acc;
   }, {});
 
   const { apps, matrix } = Formatter.generateMatrix(readyForMatrix);
-  const { optRoles, entitlementCount } = Miner.examplefunc({ matrix, appRoles });
+  const { optRoles, entitlementCount, fitArr, depFit } = Miner.examplefunc({ matrix, appRoles });
 
   const miningRes = {
     appRoles: appRoles,
     optRoles: optRoles,
     entitlementCount: entitlementCount,
+    fitArr: fitArr,
+    depFit: depFit,
   }
 
-  const returnedData = [];
-  returnedData.push(...departmentOverviews);
-  returnedData.push(miningRes);
 
-  return returnedData;
+  return {
+    overviews: departmentOverviews,
+    miningData: miningRes,
+  };
 };
 
 // Skab alle afdelingsoversigter... måske ikke brugbar, men...

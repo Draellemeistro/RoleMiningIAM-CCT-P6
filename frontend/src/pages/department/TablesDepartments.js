@@ -1,7 +1,17 @@
 import * as React from 'react';
-
-import { DataGrid } from '@mui/x-data-grid';
-import { Box } from '@mui/material';
+import { Box, Accordion, AccordionSummary, AccordionDetails, Typography, Chip, Stack } from '@mui/material';
+import {
+  DataGrid,
+  GridToolbarExport,
+  GridToolbarContainer,
+  GridToolbarColumnsButton,
+  GridToolbarFilterButton,
+  GridToolbarDensitySelector,
+} from '@mui/x-data-grid';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import Tooltip from '@mui/material/Tooltip';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import PrintIcon from '@mui/icons-material/Print';
 
 const rogueText = "*"; // smæk på rogue app roles
 const fNameWidth = 120;
@@ -43,29 +53,44 @@ const generatedRowStyles = Object.entries(colorCodings)
 
 // TODO: Make the table responsive (or at least scrollable) on smaller screens
 export default function DepartmentDataGridRows({ departmentDataArr }) {
+  const depOverviews = departmentDataArr.overviews;
+
+  const adminRolesForTable = [];
   const tables = [];
-  departmentDataArr.forEach((departmentData) => {
-    tables.push(generateTableUserRows(departmentData));
+  try {
+    depOverviews.forEach((overview) => {
+      const { table, adminRoles } = generateTableUserRows(overview);
+      tables.push(table);
+      adminRolesForTable.push(adminRoles);
+      // adminRolesForTable.push(listAdminRoles(departmentData));
+    });
+  } catch (error) {
+    console.error("Error generating tables:", error);
+    return <div>Error generating tables</div>;
+  }
+  if (departmentDataArr.miningData) {
+    const minerTable = generateMinerTable(departmentDataArr.miningData);
+    tables.push(minerTable);
+  }
+
+  const mergedAdminRoles = new Set();
+  adminRolesForTable.forEach(roleSet => {
+    roleSet.forEach(role => mergedAdminRoles.add(role));
   });
 
   const dangerApps = [];
   const dangerThreshold = 1;
 
-
   for (const table of tables) {
     table.columns.forEach((col) => {
       let appearances = 0;
-
       table.rows.forEach((row) => {
         const value = (row[col.field] || '').toString().toLowerCase();
-
         if (['read', 'write', 'admin'].includes(value)) {
           appearances++;
-          console.log(`Found ${value} in ${col.field} for user ${row.fullName}`);
         }
       });
 
-      console.log('appearances', appearances);
       if (appearances <= dangerThreshold && appearances > 0) {
         dangerApps.push({
           appName: col.field,
@@ -75,107 +100,149 @@ export default function DepartmentDataGridRows({ departmentDataArr }) {
       }
     });
   }
+  return FormatTablesForPageUserRows(tables, mergedAdminRoles, dangerApps);
+}
 
-  if (dangerApps.length > 0) {
-    console.log('Danger apps:', dangerApps);
-    return formatDangerApps(tables, dangerApps);
-  } else {
-    console.log('No danger apps found');
-    return FormatTablesForPageUserRows(tables);
-  }
-
-};
-
-
-function formatDangerApps(tables, dangerApps = []) {
+function FormatTablesForPageUserRows(tables, adminAccesses, dangerApps = [],) {
   return (
     <>
-      {/* 🧭 Legend Banner at the top */}
       <Box
         sx={{
-          backgroundColor: '#e6f7ff',
-          color: '#004085',
-          border: '1px solid #b8daff',
-          borderRadius: '4px',
-          padding: '12px',
-          marginBottom: '24px',
-          fontSize: '14px',
-          fontWeight: 500,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          gap: 2,
+          px: 2,
         }}
       >
-        <div style={{ marginBottom: '8px' }}>
-          <strong>Legend:</strong> This table highlights permission types and unusual patterns:
-        </div>
-        <ul style={{ paddingLeft: '20px', marginBottom: 0 }}>
-          <li><span style={{ backgroundColor: 'rgba(255, 0, 0, 0.4)', padding: '2px 4px' }}>Red</span> = Admin access</li>
-          <li><span style={{ backgroundColor: 'rgba(255, 255, 0, 0.4)', padding: '2px 4px' }}>Yellow</span> = Write access</li>
-          <li><span style={{ backgroundColor: 'rgba(0, 255, 0, 0.4)', padding: '2px 4px' }}>Green</span> = Read access</li>
-          <li><span style={{ border: '2px dashed purple', padding: '2px 4px', fontStyle: 'italic' }}>Dashed purple cell</span> = Rogue app role (unexpected or direct assignment)</li>
-        </ul>
-      </Box>
-      {tables.map((table, idx) => {
-        const dangerForTable = dangerApps.filter(app => app.department === table.title);
+        {/* Accordion */}
+        {adminAccesses.size > 0 && (
+          <Accordion
+            defaultExpanded={false}
+            sx={{
+              backgroundColor: '#f8d7da',
+              border: '1px solid #f5c6cb',
+              color: '#721c24',
+              borderRadius: '4px',
+            }}
+          >
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography color="#721c24" fontWeight={600}>
+                <strong>WARNING: </strong> Admin-Level Roles Detected ({adminAccesses.size})
+              </Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <ul style={{ paddingLeft: '20px', marginTop: 0 }}>
+                {[...adminAccesses].map((roleName, i) => (
+                  <li key={i}>{roleName}</li>
+                ))}
+              </ul>
+            </AccordionDetails>
+          </Accordion>
+        )}
 
-        return (
-          <Box key={idx} sx={{ mb: 5 }}>
-            <div style={{ marginBottom: '8px', fontWeight: 'bold', textAlign: 'center', fontSize: '20px' }}>
-              {table.title || `Department ${idx + 1}`}
-            </div>
+        {/* Tables */}
+        {tables.map((table, idx) => {
+          const dangerForTable = dangerApps.filter(app => app.department === table.title);
 
-            {/* 🚨 Banner for rare permissions */}
-            {dangerForTable.length > 0 && (
-              <Box
-                sx={{
-                  backgroundColor: '#fff3cd',
-                  color: '#856404',
-                  border: '1px solid #ffeeba',
-                  borderRadius: '4px',
-                  padding: '12px',
-                  marginBottom: '16px',
-                  fontSize: '14px',
-                  fontWeight: 500,
-                }}
-              >
-                CAUTION: Rare Permissions in this Department:
-                <ul style={{ marginTop: '8px', paddingLeft: '20px' }}>
-                  {dangerForTable.map((entry, i) => (
-                    <li key={i}>
-                      <strong>{entry.appName}</strong> — only {entry.count} user{entry.count !== 1 && 's'}
-                    </li>
-                  ))}
-                </ul>
+          return (
+            <Box key={idx} sx={{ width: '100%', maxWidth: '2000px' }}>
+              {dangerForTable.length > 0 && (
+                <Box
+                  sx={{
+                    backgroundColor: '#fff3cd',
+                    color: '#856404',
+                    border: '1px solid #ffeeba',
+                    borderRadius: '4px',
+                    padding: '12px',
+                    fontSize: '14px',
+                    fontWeight: 500,
+                    mb: 2,
+                  }}
+                >
+                  CAUTION: Rare Permissions in this Department:
+                  <Stack direction="row" flexWrap="wrap" gap={1} mt={1}>
+                    {dangerForTable.map((entry, i) => (
+                      <Chip
+                        key={i}
+                        label={
+                          <span>
+                            <strong>{entry.appName}</strong> — {entry.count} user{entry.count !== 1 ? 's' : ''}
+                          </span>
+                        }
+                        sx={{
+                          backgroundColor: '#ffe8a1',
+                          color: '#856404',
+                          fontWeight: 500,
+                        }}
+                      />
+                    ))}
+                  </Stack>
+                </Box>
+              )}
+
+              <Box>
+                <DataGrid
+                  rows={table.rows}
+                  columns={table.columns}
+                  columnHeaderHeight={130}
+                  getCellClassName={getCellStyleClassUserRows}
+                  showCellVerticalBorder
+                  showColumnVerticalBorder
+                  pageSizeOptions={[5, 10, 20, { value: -1, label: 'All' }]}
+                  initialState={{
+                    pagination: {
+                      paginationModel: { pageSize: -1 },
+                    },
+                  }}
+                  slots={{
+                    toolbar: CustomToolbar,
+                  }}
+                  slotProps={{
+                    toolbar: {
+                      tableTitle: table.title || `Department ${idx + 1}`,
+                    },
+                  }}
+                  disableRowSelectionOnClick
+                  showToolbar
+                />
               </Box>
-            )}
-
-            <Box sx={{ height: 900, width: '100%' }}>
-              <DataGrid
-                rows={table.rows}
-                columns={table.columns}
-                columnHeaderHeight={130}
-                getCellClassName={getCellStyleClassUserRows}
-                showCellVerticalBorder
-                showColumnVerticalBorder
-                pageSizeOptions={[5, 10, 20, { value: -1, label: 'All' }]}
-                initialState={{
-                  pagination: {
-                    paginationModel: { pageSize: -1 },
-                  },
-                }}
-                checkboxSelection
-                disableRowSelectionOnClick
-              />
             </Box>
-          </Box>
-        );
-      })}
-      <style>{generatedRowStyles}</style>
+          );
+        })}
+
+        <style>{generatedRowStyles}</style>
+        {/* Legend Banner */}
+        <Box
+          sx={{
+            backgroundColor: '#e6f7ff',
+            color: '#004085',
+            border: '1px solid #b8daff',
+            borderRadius: '4px',
+            padding: '12px',
+            fontSize: '14px',
+            fontWeight: 500,
+          }}
+        >
+          <div style={{ marginBottom: '5px' }}>
+            <strong>Legend:</strong> This table highlights permission types and unusual patterns:
+          </div>
+          <ul style={{ paddingLeft: '20px', marginBottom: 0 }}>
+            <li><span style={{ backgroundColor: 'rgba(255, 0, 0, 0.4)', padding: '2px 4px' }}>Red</span> = Admin access</li>
+            <li><span style={{ backgroundColor: 'rgba(255, 255, 0, 0.4)', padding: '2px 4px' }}>Yellow</span> = Write access</li>
+            <li><span style={{ backgroundColor: 'rgba(0, 255, 0, 0.4)', padding: '2px 4px' }}>Green</span> = Read access</li>
+            <li><span style={{ border: '2px dashed purple', padding: '2px 4px', fontStyle: 'italic' }}>Dashed purple cell</span> = Rogue app role</li>
+          </ul>
+        </Box>
+
+      </Box>
     </>
+
   );
 }
 
 
 // TODO: Make user clickable to open a modal with more information about the user (or send to another page)
-// TODO: Make the table sortable by column
 function generateTableUserRows(departmentData) {
   if (departmentData.optRoles) {
     return generateMinerTable(departmentData);
@@ -186,6 +253,7 @@ function generateTableUserRows(departmentData) {
   const columns = [];
   const appCols = [];
   const funcRoleTracker = [];
+  const adminRoles = new Set(); // To track admin roles for the table
 
   columns.push({
     field: 'fullName',
@@ -199,7 +267,6 @@ function generateTableUserRows(departmentData) {
       id: rowId,// Required for DataGrid, can be any unique string
       fullName: user.fullName || 'N/A',
     };
-
     const funcRoleString = user.funcRoles.map((funcRole) => funcRole.name).join(', ') || 'N/A';
     row['funcRoles'] = funcRoleString || 'N/A';
 
@@ -222,7 +289,7 @@ function generateTableUserRows(departmentData) {
                     display: 'flex', // Flexbox to center the text
                     alignItems: 'center', // Vertically center
                     justifyContent: 'center', // Horizontally center
-                    height: '120px', // Adjust height as needed
+                    height: '130px', // Adjust height as needed
                     width: '50px', // Adjust width as needed
                   }}>
                   {colDef.headerName.replace(/\s*\([^)]*\)/g, '').trim()}
@@ -236,6 +303,9 @@ function generateTableUserRows(departmentData) {
       funcRole.appRoles.forEach((appRole) => {
         const appRoleName = appRole.name.replace(/\s*\([^)]*\)/g, '').trim() || 'N/A';
         const appRolePrivLevel = appRole.PrivLevel || 'N/A';
+        if (appRolePrivLevel === 'admin') {
+          adminRoles.add(appRoleName);
+        }
         row[appRoleName] = appRolePrivLevel;
       });
     });
@@ -255,7 +325,7 @@ function generateTableUserRows(departmentData) {
                 display: 'flex', // Flexbox to center the text
                 alignItems: 'center', // Vertically center
                 justifyContent: 'center', // Horizontally center
-                height: '120px', // Adjust height as needed
+                height: '130px', // Adjust height as needed
                 width: '50px', // Adjust width as needed
               }}>
               {colDef.headerName.replace(/\s*\([^)]*\)/g, '').trim()}
@@ -263,8 +333,11 @@ function generateTableUserRows(departmentData) {
           ),
         });
       }
-
       row[rogueAppRole.name.replace(/\s*\([^)]*\)/g, '').trim()] = rogueAppRole.PrivLevel + rogueText || 'N/A';
+      if (rogueAppRole.PrivLevel === 'admin') {
+        adminRoles.add(rogueAppRole.name.replace(/\s*\([^)]*\)/g, '').trim());
+
+      }
     });
     rows.push(row);
     rowCounter++;
@@ -276,68 +349,23 @@ function generateTableUserRows(departmentData) {
     headerName: 'Functional Roles',
     width: funcRoleWidth,
   });
-  return {
+  const table = {
     rows: rows,
     columns: columns,
     title: departmentData.departmentName || 'N/A',
   }
-}
-
-// Tabel regler og mui + sx styling
-function FormatTablesForPageUserRows(tables) {
-  return (
-    <>
-      {tables.map((table, idx) => (
-        <Box key={idx} sx={{ mb: 5 }}>
-          <div style={{ marginBottom: '8px', fontWeight: 'bold', textAlign: 'center', fontSize: '20px' }}>
-            {table.title || `Department ${idx + 1}`}
-          </div>
-          <Box sx={{ height: 900, width: '100%' }}>
-            <DataGrid
-              rows={table.rows}
-              columns={table.columns}
-              columnHeaderHeight={130}
-              getCellClassName={getCellStyleClassUserRows}
-              showCellVerticalBorder
-              showColumnVerticalBorder
-              pageSizeOptions={[5, 10, 20, { value: -1, label: 'All' }]}
-              initialState={{
-                pagination: {
-                  paginationModel: { pageSize: -1 },
-                },
-              }}
-              checkboxSelection
-              disableRowSelectionOnClick
-            />
-          </Box>
-        </Box>
-      ))}
-      <style>{generatedRowStyles}</style>
-    </>
-  )
-}
-
-// Find the cell style based on the value and field
-function getCellStyleClassUserRows(cellData) {
-  const value = cellData.value;
-  const field = cellData.field;
-  if (field === 'fullName' || field === 'funcRoles') return '';
-  if (!value || typeof value !== 'string') return '';
-
-  const lower = value.toLowerCase();
-  const isRogue = value.includes('*');
-
-  const match = Object.keys(colorCodings).find(key => lower.includes(key));
-  const baseClass = match ? `priv-${match}` : '';
-
-  return isRogue ? `${baseClass} rogue-cell` : baseClass;
+  return {
+    table,
+    adminRoles,
+  }
 }
 
 function generateMinerTable(departmentData) {
   const appRoles = departmentData.appRoles;
   const roleMatrix = departmentData.optRoles;
-  // const entitlementCount = departmentData.entitlementCount;
   const title = "Suggested Roles from Mining";
+  const fitArr = departmentData.fitArr;
+  const depFit = departmentData.depFit;
   const columns = [];
   const rows = [];
   const appRoleCols = [];
@@ -369,14 +397,16 @@ function generateMinerTable(departmentData) {
     }
   });
 
-  // { field: appRole.AppRoleName, headerName: appRole.AppRoleName, width: 150 };
-
   let rowCounter = 0;
   for (const matrixRow of roleMatrix) {
+    const rawFit = fitArr[rowCounter];
+    const fit = isFinite(rawFit) ? `Best fit: ${(rawFit * 100).toFixed(2)}%` : "Best fit: Too Low";
+
+    const rawOverallFit = depFit[rowCounter];
+    const overallFit = isFinite(rawOverallFit) ? `Overall fit: ${(rawOverallFit * 100).toFixed(2)}%` : "Overall fit: Too Low";
     const rowId = `role-${rowCounter}`; // field names must be strings
-    const row = { id: rowId || 'N/A' };
+    const row = { id: rowId || 'N/A', fit: fit || 'N/A', overallFit: overallFit || 'N/A' };
     rowCounter++;
-    console.log('matrixRow', matrixRow);
     for (const matrixCell of matrixRow) {
       const prmId = matrixCell;
       if (prmId !== 0 && prmId !== null && prmId !== undefined) {
@@ -387,7 +417,16 @@ function generateMinerTable(departmentData) {
     }
     rows.push(row);
   }
+  rowCounter = 0;
+  for (const fit of fitArr) {
+    const rowId = `role-${rowCounter}`; // field names must be strings
+    rows[rowCounter]['id'] = rowId || 'N/A';
+
+    rowCounter++;
+  }
   columns.push({ field: 'id', headerName: 'roles', width: 120 });
+  columns.push({ field: 'fit', headerName: 'Individual Fit', width: 120 });
+  columns.push({ field: 'overallFit', headerName: 'Total Fit', width: 120 });
   columns.push(...appRoleCols);
 
   return {
@@ -397,9 +436,48 @@ function generateMinerTable(departmentData) {
   };
 }
 
+
+const CustomToolbar = ({ tableTitle }) => {
+  return (
+    <GridToolbarContainer sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 1, pb: 1, mb: 1 }}>
+      <Typography fontWeight="medium">
+        {tableTitle}
+      </Typography>
+      <Box sx={{ display: 'flex', gap: 1 }}>
+        <GridToolbarColumnsButton />
+        <GridToolbarFilterButton />
+        <GridToolbarDensitySelector slotProps={{ tooltip: { title: 'Change density' } }} />
+        <GridToolbarExport
+          slotProps={{
+            tooltip: { title: 'Export data' },
+            button: { variant: 'outlined' },
+          }}
+        />
+      </Box>
+    </GridToolbarContainer>
+  );
+};
+
+
 const getPermLevel = (appRoles, permId) => {
   const appName = appRoles[String(permId)];
   const match = appName.match(/\((\w+)\saccess\)/);
   return match ? match[1] : null;
+}
+
+// Find the cell style based on the value and field
+function getCellStyleClassUserRows(cellData) {
+  const value = cellData.value;
+  const field = cellData.field;
+  if (field === 'fullName' || field === 'funcRoles') return '';
+  if (!value || typeof value !== 'string') return '';
+
+  const lower = value.toLowerCase();
+  const isRogue = value.includes('*');
+
+  const match = Object.keys(colorCodings).find(key => lower.includes(key));
+  const baseClass = match ? `priv-${match}` : '';
+
+  return isRogue ? `${baseClass} rogue-cell` : baseClass;
 }
 
